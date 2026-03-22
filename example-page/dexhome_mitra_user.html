@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DexHome — Mitra Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F3EE;--warm:#FDFAF5;--card:#fff;
+  --brown:#2C1810;--brown2:#3D2318;--gold:#C9962A;--gold-l:#E8B84B;
+  --gold-p:rgba(201,150,42,.10);--terra:#C4572A;--sage:#7A8C6E;
+  --blue:#4A90D9;--muted:#8A7F74;--bdr:#E2D8C8;--bdr2:#D4C8B4;
+  --sh:0 2px 16px rgba(44,24,16,.07);--sh2:0 8px 40px rgba(44,24,16,.13);
+  --nav:256px;--top:62px;--r:13px;--r2:9px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--brown);min-height:100vh;overflow-x:hidden}
+.shell{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sb{width:var(--nav);flex-shrink:0;background:linear-gradient(180deg,var(--brown) 0%,#1A0E08 100%);position:fixed;top:0;left:0;bottom:0;z-index:300;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.16,1,.3,1)}
+.sb::-webkit-scrollbar{width:0}
+.sb-top{padding:22px 20px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sb-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.sb-logo span{color:var(--gold)}
+.sb-tag{display:inline-flex;align-items:center;gap:4px;background:var(--gold-p);border:1px solid rgba(201,150,42,.3);border-radius:5px;padding:2px 8px;margin-top:5px}
+.sb-tag-txt{font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase}
+.sb-mitra{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:11px}
+.sb-mav{width:40px;height:40px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.sb-mname{font-size:13px;font-weight:700;color:#fff;line-height:1.2}
+.sb-mcode{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px;font-family:monospace}
+.sb-mstatus{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--sage);font-weight:600;margin-top:2px}
+.sb-mstatus::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--sage)}
+.sb-nav{padding:12px 8px;flex:1;overflow-y:auto}
+.sb-sec{font-size:9px;font-weight:700;color:rgba(255,255,255,.25);letter-spacing:.1em;text-transform:uppercase;padding:0 10px;margin:12px 0 5px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r2);cursor:pointer;transition:all .2s;color:rgba(255,255,255,.55);font-size:12px;font-weight:500;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.ni:hover{background:rgba(255,255,255,.08);color:#fff}
+.ni.active{background:var(--gold);color:#fff;font-weight:700}
+.ni .ic{font-size:16px;width:18px;text-align:center;flex-shrink:0}
+.ni .nb{margin-left:auto;background:var(--terra);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:100px}
+.sb-bot{padding:10px 8px;border-top:1px solid rgba(255,255,255,.07)}
+
+/* TOPBAR */
+.tb{position:fixed;top:0;left:var(--nav);right:0;height:var(--top);background:rgba(253,250,245,.97);backdrop-filter:blur(14px);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:14px;padding:0 26px;z-index:200}
+.tb-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--brown)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:9px}
+.tb-srch{display:flex;align-items:center;gap:7px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:100px;padding:7px 14px;transition:border-color .2s}
+.tb-srch:focus-within{border-color:var(--gold)}
+.tb-srch input{border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--brown);width:160px}
+.tb-srch input::placeholder{color:var(--muted)}
+.tb-ibtn{width:36px;height:36px;border-radius:8px;background:var(--bg);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all .2s;position:relative}
+.tb-ibtn:hover{border-color:var(--gold);background:var(--gold-p)}
+.ndot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--terra);border:1.5px solid var(--warm)}
+.ham{display:none;width:36px;height:36px;border-radius:8px;background:none;border:1.5px solid var(--bdr);align-items:center;justify-content:center;font-size:17px;cursor:pointer;color:var(--brown)}
+
+/* MAIN */
+.main{margin-left:var(--nav);padding-top:var(--top);min-height:100vh}
+.page{display:none;padding:26px 30px;animation:fadeUp .28s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:290}
+
+/* COMMON */
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--bdr);box-shadow:var(--sh)}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.sec-lbl::before{content:'';width:16px;height:2px;background:var(--gold)}
+.sec-ttl{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--brown);margin-bottom:2px}
+.btn{padding:8px 18px;border-radius:var(--r2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--brown);color:#fff}.btn-p:hover{background:var(--terra);transform:translateY(-1px)}
+.btn-g{background:var(--gold);color:#fff}.btn-g:hover{background:var(--gold-l)}
+.btn-o{background:none;border:1.5px solid var(--bdr);color:var(--brown)}.btn-o:hover{border-color:var(--brown)}
+.btn-sm{padding:5px 12px;font-size:11px}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:100px;font-size:10px;font-weight:700}
+.b-gold{background:rgba(201,150,42,.12);color:var(--gold)}
+.b-green{background:rgba(122,140,110,.12);color:var(--sage)}
+.b-red{background:rgba(196,87,42,.10);color:var(--terra)}
+.b-grey{background:var(--bg);color:var(--muted)}
+.b-blue{background:rgba(74,144,217,.10);color:var(--blue)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* ══ ANNOUNCEMENT PAGE ══ */
+.ann-hero{background:linear-gradient(135deg,var(--brown),var(--brown2));border-radius:16px;padding:24px 28px;margin-bottom:22px;display:flex;align-items:center;gap:20px;position:relative;overflow:hidden}
+.ann-hero::before{content:'';position:absolute;right:-30px;top:-30px;width:160px;height:160px;background:radial-gradient(circle,rgba(201,150,42,.18),transparent 70%)}
+.ann-hero::after{content:'';position:absolute;bottom:-40px;left:30%;width:120px;height:120px;background:radial-gradient(circle,rgba(196,87,42,.12),transparent 70%)}
+.ann-hero-ic{width:56px;height:56px;border-radius:14px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;position:relative;z-index:1}
+.ann-hero-txt{flex:1;position:relative;z-index:1}
+.ann-hero-txt h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:5px}
+.ann-hero-txt p{font-size:12px;color:rgba(255,255,255,.5)}
+.ann-hero-meta{position:relative;z-index:1;text-align:right}
+.ann-hero-count{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:var(--gold);line-height:1}
+.ann-hero-clbl{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+
+/* Filter tabs */
+.filter-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.ftab{padding:6px 16px;border-radius:100px;border:1.5px solid var(--bdr);background:var(--card);font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s}
+.ftab:hover{border-color:var(--brown);color:var(--brown)}
+.ftab.active{background:var(--brown);border-color:var(--brown);color:#fff;font-weight:600}
+
+/* Announcement cards */
+.ann-grid{display:flex;flex-direction:column;gap:12px}
+.ann-card{background:var(--card);border-radius:var(--r);border:1px solid var(--bdr);overflow:hidden;box-shadow:var(--sh);transition:all .2s;cursor:pointer}
+.ann-card:hover{box-shadow:var(--sh2);border-color:var(--bdr2);transform:translateY(-1px)}
+.ann-card.unread{border-left:3px solid var(--gold)}
+.ann-card-inner{padding:18px 20px;display:flex;gap:14px}
+.ann-ic{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ann-ic.promo{background:rgba(201,150,42,.12)}.ann-ic.sys{background:rgba(74,144,217,.10)}.ann-ic.event{background:rgba(122,140,110,.12)}.ann-ic.urgent{background:rgba(196,87,42,.10)}.ann-ic.info{background:rgba(138,127,116,.10)}
+.ann-body{flex:1}
+.ann-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:5px}
+.ann-title{font-size:14px;font-weight:700;color:var(--brown);line-height:1.3}
+.ann-time{font-size:10px;color:var(--muted);flex-shrink:0;margin-top:2px}
+.ann-preview{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.ann-foot{display:flex;align-items:center;gap:8px}
+.ann-unread-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-left:auto;flex-shrink:0}
+
+/* Expanded */
+.ann-expanded{display:none;padding:0 20px 20px 20px;border-top:1px solid var(--bdr)}
+.ann-card.open .ann-expanded{display:block}
+.ann-content{font-size:13px;line-height:1.8;color:var(--brown);padding-top:16px}
+.ann-content h3{font-family:'Playfair Display',serif;font-size:17px;margin-bottom:10px;color:var(--brown)}
+.ann-content p{margin-bottom:10px}
+.ann-content ul{margin-left:20px;margin-bottom:10px}
+.ann-content ul li{margin-bottom:6px}
+.ann-att{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--bdr);margin-top:12px;cursor:pointer;transition:all .2s}
+.ann-att:hover{border-color:var(--gold);background:var(--gold-p)}
+.ann-att-name{font-size:12px;font-weight:600;color:var(--brown);flex:1}
+.ann-att-size{font-size:10px;color:var(--muted)}
+
+/* ══ KATALOG SUPPLIER ══ */
+.kat-layout{display:grid;grid-template-columns:210px 1fr;gap:18px}
+.f-panel{background:var(--card);border-radius:var(--r);border:1px solid var(--bdr);padding:16px;margin-bottom:12px}
+.f-ttl{font-size:12px;font-weight:700;color:var(--brown);margin-bottom:10px;display:flex;justify-content:space-between}
+.f-ttl button{background:none;border:none;font-size:11px;color:var(--gold);cursor:pointer;font-weight:600}
+.f-opt{display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer}
+.f-opt:last-child{margin-bottom:0}
+.f-cb{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:10px}
+.f-opt.on .f-cb{background:var(--brown);border-color:var(--brown);color:#fff}
+.f-opt label{font-size:12px;color:var(--brown);cursor:pointer;flex:1}
+.f-cnt{font-size:10px;color:var(--muted)}
+
+.sort-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sort-row p{font-size:12px;color:var(--muted)}
+.sort-sel{padding:7px 12px;border:1.5px solid var(--bdr);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--brown);background:var(--card);outline:none}
+
+/* Supplier product card */
+.sprod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.spc{background:var(--card);border-radius:var(--r);border:1px solid var(--bdr);overflow:hidden;box-shadow:var(--sh);transition:all .3s;cursor:pointer}
+.spc:hover{transform:translateY(-3px);box-shadow:var(--sh2)}
+.spc-img{height:150px;display:flex;align-items:center;justify-content:center;font-size:52px;position:relative}
+.spc-bdg{position:absolute;top:8px;left:8px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em}
+.spc-bdg.new{background:var(--sage);color:#fff}.spc-bdg.hot{background:var(--terra);color:#fff}.spc-bdg.sale{background:var(--gold);color:#fff}
+.spc-add{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.9);border:none;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:all .2s}
+.spc-add:hover{background:#fff;transform:scale(1.1)}
+.spc-body{padding:12px 14px}
+.spc-brand{font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.spc-name{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--brown);margin-bottom:4px;line-height:1.25}
+.spc-sku{font-size:10px;color:var(--muted);font-family:monospace;margin-bottom:7px}
+.spc-foot{display:flex;align-items:center;justify-content:space-between}
+.spc-price{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--brown)}
+.spc-harga{font-size:10px;color:var(--muted);text-decoration:line-through;margin-left:4px}
+.spc-btn{padding:5px 11px;background:var(--brown);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:background .2s}
+.spc-btn:hover{background:var(--terra)}
+
+/* Product detail modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:18px;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;position:relative}
+.modal::-webkit-scrollbar{width:3px}
+.modal::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:10px}
+.modal-hdr{padding:20px 24px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:2}
+.modal-close{width:32px;height:32px;border-radius:8px;background:var(--bg);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.modal-body{padding:24px}
+.modal-img{height:220px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:80px;margin-bottom:18px;border:1px solid var(--bdr)}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.modal-field{background:var(--bg);border-radius:8px;padding:11px 14px}
+.modal-field-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.modal-field-val{font-size:13px;font-weight:600;color:var(--brown)}
+.qty-ctrl{display:flex;align-items:center;border:1.5px solid var(--bdr);border-radius:8px;overflow:hidden}
+.qty-btn{width:32px;height:32px;background:var(--bg);border:none;color:var(--brown);font-size:18px;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center}
+.qty-btn:hover{background:var(--bdr)}
+.qty-inp{width:48px;text-align:center;font-size:14px;font-weight:700;color:var(--brown);border:none;background:transparent;outline:none;font-family:'DM Sans',sans-serif}
+
+/* ══ CHAT COMMUNITY ══ */
+.comm-wrap{display:grid;grid-template-columns:220px 1fr 200px;gap:14px}
+.comm-channels{background:var(--card);border-radius:var(--r);border:1px solid var(--bdr)}
+.ch-hdr{padding:14px 16px;border-bottom:1px solid var(--bdr)}
+.ch-hdr h3{font-size:12px;font-weight:700;color:var(--brown)}
+.ch-hdr p{font-size:10px;color:var(--muted);margin-top:1px}
+.ch-sec{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:10px 14px 4px}
+.ch-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;transition:background .2s}
+.ch-item:hover{background:var(--bg)}
+.ch-item.active{background:var(--gold-p);border-left:2px solid var(--gold)}
+.ch-ico{font-size:13px;width:15px;text-align:center;flex-shrink:0}
+.ch-name{font-size:12px;color:var(--muted);flex:1}
+.ch-item.active .ch-name{color:var(--gold);font-weight:600}
+.ch-cnt{font-size:9px;font-weight:700;padding:1px 5px;border-radius:100px;background:var(--terra);color:#fff}
+.ch-lock{font-size:10px;color:rgba(138,127,116,.4)}
+
+.comm-chat{display:flex;flex-direction:column;background:var(--card);border-radius:var(--r);border:1px solid var(--bdr);overflow:hidden;height:calc(100vh - var(--top) - 110px)}
+.comm-hdr{padding:12px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:var(--warm)}
+.comm-hdr-name{font-size:13px;font-weight:700;color:var(--brown)}
+.comm-hdr-desc{font-size:11px;color:var(--muted)}
+.comm-online{margin-left:auto;font-size:10px;color:var(--sage);display:flex;align-items:center;gap:4px}
+.comm-online::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--sage)}
+.comm-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:13px}
+.comm-body::-webkit-scrollbar{width:3px}
+.comm-body::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:10px}
+.c-sep{text-align:center;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.c-sep::before,.c-sep::after{content:'';flex:1;height:1px;background:var(--bdr)}
+.c-sys{text-align:center;font-size:10px;color:var(--muted);padding:5px 12px;background:var(--bg);border-radius:100px;margin:0 auto;width:fit-content}
+.cmsg{display:flex;gap:9px}
+.cmsg.me{margin-left:auto;flex-direction:row-reverse;max-width:72%}
+.cmsg:not(.me){max-width:72%}
+.cav{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px}
+.cmeta{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.cname{font-size:11px;font-weight:700;color:var(--brown)}
+.crole{font-size:9px;font-weight:700;padding:1px 6px;border-radius:100px}
+.crole.admin{background:rgba(201,150,42,.13);color:var(--gold)}
+.crole.mitra{background:rgba(122,140,110,.12);color:var(--sage)}
+.ctime{font-size:10px;color:var(--muted)}
+.cbbl{padding:10px 14px;border-radius:4px 12px 12px 12px;font-size:12px;line-height:1.6;background:var(--bg);color:var(--brown)}
+.cmsg.me .cbbl{background:var(--brown);color:rgba(255,255,255,.9);border-radius:12px 4px 12px 12px}
+.cmsg.me .cbbl.gold-self{background:var(--gold)}
+.creacts{display:flex;gap:4px;margin-top:5px}
+.creact{padding:2px 7px;border-radius:100px;background:var(--card);border:1px solid var(--bdr);font-size:11px;cursor:pointer;transition:all .2s;color:var(--muted)}
+.creact:hover,.creact.on{border-color:var(--gold);color:var(--gold);background:var(--gold-p)}
+.pinned-banner{background:rgba(201,150,42,.07);border:1px solid rgba(201,150,42,.2);border-radius:8px;padding:8px 12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:2px}
+.pinned-banner .pin-ic{font-size:14px;flex-shrink:0;margin-top:1px}
+.pinned-banner .pin-txt{font-size:11px;color:var(--brown);line-height:1.5}
+.pinned-banner .pin-by{font-size:10px;color:var(--muted);margin-top:2px}
+
+.comm-inp{padding:12px 16px;border-top:1px solid var(--bdr);background:var(--warm)}
+.comm-inp-row{display:flex;align-items:flex-end;gap:8px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:11px;padding:8px 12px;transition:border-color .2s}
+.comm-inp-row:focus-within{border-color:var(--gold)}
+.comm-inp-row textarea{flex:1;border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;resize:none;max-height:70px;color:var(--brown);line-height:1.5}
+.comm-inp-row textarea::placeholder{color:var(--muted)}
+.comm-ic-btn{background:none;border:none;font-size:16px;cursor:pointer;color:var(--muted);transition:color .2s}
+.comm-ic-btn:hover{color:var(--gold)}
+.comm-send{width:30px;height:30px;border-radius:8px;background:var(--brown);border:none;color:#fff;font-size:13px;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.comm-send:hover{background:var(--terra)}
+
+.comm-members{background:var(--card);border-radius:var(--r);border:1px solid var(--bdr);overflow:hidden}
+.mb-hdr{padding:12px 14px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:700;color:var(--brown)}
+.mb-item{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--bdr)}
+.mb-item:last-child{border-bottom:none}
+.mb-av{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.mb-info{flex:1}
+.mb-name{font-size:11px;font-weight:600;color:var(--brown)}
+.mb-role{font-size:9px;color:var(--muted)}
+.mb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.mb-dot.on{background:var(--sage)}.mb-dot.off{background:var(--bdr)}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--brown);color:#fff;padding:11px 22px;border-radius:100px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;z-index:9999;box-shadow:var(--sh2);transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .4s;opacity:0;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* RESP */
+@media(max-width:1100px){.sprod-grid{grid-template-columns:repeat(2,1fr)}.comm-wrap{grid-template-columns:200px 1fr}}
+@media(max-width:900px){:root{--nav:0px}.sb{transform:translateX(-256px);width:256px}.sb.open{transform:translateX(0)}.sov{display:block;opacity:0;pointer-events:none;transition:opacity .3s}.sov.open{opacity:1;pointer-events:all}.tb{left:0;padding:0 14px}.ham{display:flex}.main{margin-left:0}.page{padding:16px}.kat-layout{grid-template-columns:1fr}.comm-wrap{grid-template-columns:1fr}}
+@media(max-width:560px){.sprod-grid{grid-template-columns:1fr}.grid2,.grid3{grid-template-columns:1fr}.tb-srch{display:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sb" id="sb">
+  <div class="sb-top">
+    <div class="sb-logo">Dex<span>Home</span></div>
+    <div class="sb-tag"><span class="sb-tag-txt">🏬 Mitra Portal</span></div>
+  </div>
+  <div class="sb-mitra">
+    <div class="sb-mav">🏢</div>
+    <div>
+      <div class="sb-mname">Homera Studio Kemang</div>
+      <div class="sb-mcode">MTR-0001</div>
+      <div class="sb-mstatus">Mitra Aktif & Verified</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Menu Utama</div>
+    <button class="ni active" onclick="go('announce',this)"><span class="ic">📢</span>Pengumuman<span class="nb">3</span></button>
+    <button class="ni" onclick="go('katalog',this)"><span class="ic">📦</span>Katalog Supplier</button>
+    <button class="ni" onclick="go('comm',this)"><span class="ic">💬</span>Chat Community</button>
+    <div class="sb-sec">Info Showroom</div>
+    <button class="ni" onclick="toast('Halaman profil showroom')"><span class="ic">🏬</span>Profil Showroom</button>
+    <button class="ni" onclick="toast('Halaman performa penjualan')"><span class="ic">📊</span>Performa</button>
+  </nav>
+  <div class="sb-bot">
+    <button class="ni" onclick="toast('Keluar dari mitra portal')"><span class="ic">🚪</span>Keluar</button>
+  </div>
+</aside>
+<div class="sov" id="sov" onclick="closeSB()"></div>
+
+<!-- TOPBAR -->
+<header class="tb">
+  <button class="ham" onclick="openSB()">☰</button>
+  <div class="tb-title" id="tbtitle">Pengumuman</div>
+  <div class="tb-right">
+    <div class="tb-srch"><span style="color:var(--muted);font-size:13px">🔍</span><input placeholder="Cari pengumuman, produk..."></div>
+    <button class="tb-ibtn" onclick="toast('3 notifikasi belum dibaca')">🔔<div class="ndot"></div></button>
+    <button class="tb-ibtn" onclick="go('katalog',document.querySelectorAll('.ni')[1])">📦</button>
+  </div>
+</header>
+
+<main class="main">
+
+<!-- ════ PENGUMUMAN ════ -->
+<div class="page active" id="p-announce">
+  <div style="margin-bottom:20px"><div class="sec-lbl">Info Terkini</div><div class="sec-ttl">Pengumuman dari DexHome</div></div>
+
+  <div class="ann-hero">
+    <div class="ann-hero-ic">📢</div>
+    <div class="ann-hero-txt">
+      <h2>Selamat Datang, Homera Studio! 👋</h2>
+      <p>Ada <strong style="color:var(--gold)">3 pengumuman baru</strong> yang perlu Anda baca hari ini</p>
+      <p style="margin-top:4px">Terakhir login: Rabu, 18 Mar 2026 pukul 14.30 WIB</p>
+    </div>
+    <div class="ann-hero-meta">
+      <div class="ann-hero-count">3</div>
+      <div class="ann-hero-clbl">Belum Dibaca</div>
+    </div>
+  </div>
+
+  <div class="filter-tabs">
+    <div class="ftab active" onclick="togFtab(this)">Semua</div>
+    <div class="ftab" onclick="togFtab(this)">📣 Promosi</div>
+    <div class="ftab" onclick="togFtab(this)">⚙️ Sistem</div>
+    <div class="ftab" onclick="togFtab(this)">🎪 Event</div>
+    <div class="ftab" onclick="togFtab(this)">🚨 Mendesak</div>
+    <div class="ftab" onclick="togFtab(this)">✅ Sudah Dibaca</div>
+  </div>
+
+  <div class="ann-grid">
+
+    <!-- Urgent / New -->
+    <div class="ann-card unread" onclick="toggleAnn(this)">
+      <div class="ann-card-inner">
+        <div class="ann-ic promo">📣</div>
+        <div class="ann-body">
+          <div class="ann-top">
+            <div class="ann-title">Flash Sale April 2026 — Pastikan Stok Siap!</div>
+            <div class="ann-time">Hari ini, 09.00</div>
+          </div>
+          <div class="ann-preview">Flash Sale April akan mulai 1–15 April 2026. Pastikan semua produk Anda sudah update stok sebelum 25 Maret. Diskon yang berlaku: pelanggan mendapat potongan hingga 40%...</div>
+          <div class="ann-foot">
+            <span class="badge b-gold">📣 Promosi</span>
+            <span class="badge b-red">🚨 Penting</span>
+            <span style="font-size:10px;color:var(--muted)">Ditujukan ke: Semua Mitra</span>
+            <div class="ann-unread-dot"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ann-expanded">
+        <div class="ann-content">
+          <h3>Flash Sale April 2026 — Persiapan Mitra</h3>
+          <p>Yth. Mitra Showroom DexHome,</p>
+          <p>Flash Sale April 2026 akan segera dimulai! Berikut hal yang perlu Anda persiapkan:</p>
+          <ul>
+            <li><strong>Update stok produk</strong> paling lambat 25 Maret 2026 melalui panel Mitra Admin Anda</li>
+            <li><strong>Koordinasi pengiriman</strong> — tim logistik DexHome siap membantu untuk pengiriman massal</li>
+            <li><strong>Diskon otomatis</strong> akan diterapkan platform, tidak perlu action dari Anda</li>
+            <li><strong>Estimasi peningkatan order</strong> 3–5× dari hari normal, pastikan kapasitas penerimaan Anda siap</li>
+          </ul>
+          <p>Untuk pertanyaan, hubungi tim kami di channel <strong>#mitra-forum</strong> atau tiket CS.</p>
+          <p>Terima kasih atas kerja sama Anda! 🙏</p>
+          <div class="ann-att" onclick="event.stopPropagation();toast('Mengunduh panduan...')">
+            <span style="font-size:20px">📄</span>
+            <div><div class="ann-att-name">Panduan Flash Sale April 2026.pdf</div><div class="ann-att-size">PDF · 2.4 MB</div></div>
+            <button class="btn btn-o btn-sm" onclick="event.stopPropagation();toast('Mengunduh...')">⬇ Unduh</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System -->
+    <div class="ann-card unread" onclick="toggleAnn(this)">
+      <div class="ann-card-inner">
+        <div class="ann-ic sys">⚙️</div>
+        <div class="ann-body">
+          <div class="ann-top">
+            <div class="ann-title">Update Sistem DexHome v2.4 — Fitur Baru untuk Mitra</div>
+            <div class="ann-time">15 Mar 2026</div>
+          </div>
+          <div class="ann-preview">Versi terbaru DexHome kini hadir. Untuk mitra: panel admin baru dengan tampilan stok yang diperbarui, notifikasi order real-time, dan laporan penjualan mingguan otomatis...</div>
+          <div class="ann-foot">
+            <span class="badge b-blue">⚙️ Sistem</span>
+            <span style="font-size:10px;color:var(--muted)">Ditujukan ke: Semua Mitra</span>
+            <div class="ann-unread-dot"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ann-expanded">
+        <div class="ann-content">
+          <h3>Update DexHome v2.4 — Apa yang Baru untuk Mitra?</h3>
+          <p>Kami dengan bangga memperkenalkan pembaruan besar untuk panel mitra DexHome:</p>
+          <ul>
+            <li><strong>Dashboard Stok Real-time</strong> — lihat level stok dan peringatan stok menipis secara langsung</li>
+            <li><strong>Notifikasi Order Instan</strong> — push notification saat ada pesanan baru masuk</li>
+            <li><strong>Laporan Penjualan Mingguan</strong> — otomatis terkirim ke email setiap Senin pagi</li>
+            <li><strong>Chat CS Terintegrasi</strong> — tim pusat DexHome kini bisa koordinasi langsung via panel</li>
+            <li><strong>Galeri Foto Diperbaiki</strong> — upload hingga 12 foto produk, format WEBP kini didukung</li>
+          </ul>
+          <p>Update ini aktif secara otomatis. Tidak diperlukan tindakan dari Anda.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event -->
+    <div class="ann-card unread" onclick="toggleAnn(this)">
+      <div class="ann-card-inner">
+        <div class="ann-ic event">🎪</div>
+        <div class="ann-body">
+          <div class="ann-top">
+            <div class="ann-title">DexHome Expo 2026 — Undangan Mitra Showroom</div>
+            <div class="ann-time">10 Mar 2026</div>
+          </div>
+          <div class="ann-preview">Anda diundang untuk berpartisipasi di DexHome Expo 2026, pameran furnitur terbesar tahun ini di Jakarta Convention Center, 20–22 Juni 2026. Booth eksklusif untuk mitra verified...</div>
+          <div class="ann-foot">
+            <span class="badge b-green">🎪 Event</span>
+            <span style="font-size:10px;color:var(--muted)">Ditujukan ke: Mitra Verified</span>
+            <div class="ann-unread-dot"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ann-expanded">
+        <div class="ann-content">
+          <h3>DexHome Expo 2026 — Undangan Partisipasi</h3>
+          <p>Yth. Homera Studio,</p>
+          <p>Sebagai mitra verified DexHome, Anda mendapat undangan eksklusif untuk ikut serta di <strong>DexHome Expo 2026</strong>:</p>
+          <ul>
+            <li><strong>Tanggal:</strong> 20–22 Juni 2026</li>
+            <li><strong>Lokasi:</strong> Jakarta Convention Center, Hall A & B</li>
+            <li><strong>Booth size:</strong> 6m × 4m (standar) atau 12m × 6m (premium, terbatas)</li>
+            <li><strong>Estimasi pengunjung:</strong> 15.000+ per hari</li>
+            <li><strong>Biaya booth mitra verified:</strong> GRATIS untuk slot standar</li>
+          </ul>
+          <p>Konfirmasi partisipasi paling lambat <strong>30 April 2026</strong> melalui form di bawah.</p>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn btn-p" onclick="event.stopPropagation();toast('Partisipasi berhasil dikonfirmasi!')">✅ Konfirmasi Ikut</button>
+            <button class="btn btn-o" onclick="event.stopPropagation();toast('Terima kasih atas respons Anda')">Tidak Bisa Ikut</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Already read -->
+    <div class="ann-card" onclick="toggleAnn(this)" style="opacity:.75">
+      <div class="ann-card-inner">
+        <div class="ann-ic info">ℹ️</div>
+        <div class="ann-body">
+          <div class="ann-top">
+            <div class="ann-title">Kebijakan Pengembalian Produk — Update Maret 2026</div>
+            <div class="ann-time">5 Mar 2026</div>
+          </div>
+          <div class="ann-preview">Terdapat pembaruan kebijakan retur produk yang berlaku mulai 1 April 2026. Semua mitra wajib memahami prosedur baru ini untuk kelancaran proses klaim customer...</div>
+          <div class="ann-foot">
+            <span class="badge b-grey">ℹ️ Info</span>
+            <span style="font-size:10px;color:var(--muted)">Ditujukan ke: Semua Mitra</span>
+            <span style="font-size:10px;color:var(--sage);font-weight:600;margin-left:auto">✓ Sudah dibaca</span>
+          </div>
+        </div>
+      </div>
+      <div class="ann-expanded">
+        <div class="ann-content">
+          <h3>Update Kebijakan Retur Produk</h3>
+          <p>Mulai 1 April 2026, prosedur retur produk diperbarui untuk meningkatkan kepuasan customer. Poin utama:</p>
+          <ul>
+            <li>Window retur diperpanjang dari 7 hari menjadi <strong>30 hari</strong> setelah penerimaan produk</li>
+            <li>Foto produk saat diterima wajib diupload oleh customer dalam 24 jam</li>
+            <li>Proses pengembalian dana: maks 5 hari kerja</li>
+            <li>Untuk kerusakan di pengiriman, DexHome menanggung 100%</li>
+          </ul>
+          <div class="ann-att" onclick="event.stopPropagation();toast('Membuka dokumen...')">
+            <span style="font-size:20px">📋</span>
+            <div><div class="ann-att-name">SOP Retur Produk v3.2.pdf</div><div class="ann-att-size">PDF · 1.1 MB</div></div>
+            <button class="btn btn-o btn-sm" onclick="event.stopPropagation();toast('Mengunduh...')">⬇ Unduh</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ann-card" onclick="toggleAnn(this)" style="opacity:.75">
+      <div class="ann-card-inner">
+        <div class="ann-ic promo">🎁</div>
+        <div class="ann-body">
+          <div class="ann-top">
+            <div class="ann-title">Program Reward Mitra Q1 2026 — Homera Studio Masuk Top 5!</div>
+            <div class="ann-time">1 Mar 2026</div>
+          </div>
+          <div class="ann-preview">Selamat! Homera Studio Kemang berhasil masuk peringkat 5 besar mitra terbaik Q1 2026. Reward: bonus komisi 2% dan prioritas tampil di halaman utama DexHome selama April...</div>
+          <div class="ann-foot">
+            <span class="badge b-gold">🏆 Reward</span>
+            <span style="font-size:10px;color:var(--muted)">Ditujukan ke: Anda</span>
+            <span style="font-size:10px;color:var(--sage);font-weight:600;margin-left:auto">✓ Sudah dibaca</span>
+          </div>
+        </div>
+      </div>
+      <div class="ann-expanded">
+        <div class="ann-content">
+          <h3>Selamat! Homera Studio Masuk Top 5 Mitra Q1 2026 🎉</h3>
+          <p>Atas performa penjualan yang luar biasa di Q1 2026, DexHome memberikan penghargaan kepada Homera Studio:</p>
+          <ul>
+            <li><strong>Bonus Komisi:</strong> +2% untuk seluruh penjualan di bulan April 2026</li>
+            <li><strong>Featured Placement:</strong> Showroom Anda akan tampil di halaman utama selama April</li>
+            <li><strong>Priority Support:</strong> Jalur CS khusus untuk Anda selama Q2 2026</li>
+            <li><strong>Sertifikat Top Mitra:</strong> Dikirim ke alamat showroom Anda</li>
+          </ul>
+          <p>Terima kasih atas dedikasi Anda sebagai mitra DexHome! 🙏</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════ KATALOG SUPPLIER ════ -->
+<div class="page" id="p-katalog">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px">
+    <div><div class="sec-lbl">Pengadaan</div><div class="sec-ttl">Katalog Supplier DexHome</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-o btn-sm" onclick="toast('Lihat keranjang pengadaan')">🛒 Keranjang (3)</button>
+      <button class="btn btn-p btn-sm" onclick="toast('Ajukan permintaan stok khusus')">+ Request Stok</button>
+    </div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,var(--brown),var(--brown2));border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:18px;position:relative;overflow:hidden">
+    <div style="position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(201,150,42,.2),transparent 70%)"></div>
+    <span style="font-size:24px;position:relative;z-index:1">📦</span>
+    <div style="flex:1;position:relative;z-index:1">
+      <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:2px">Katalog Khusus Mitra Showroom</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.5)">Harga grosir eksklusif · Minimum order berlaku · Pengiriman ke showroom</div>
+    </div>
+    <div style="text-align:right;position:relative;z-index:1">
+      <div style="font-size:11px;color:rgba(255,255,255,.4)">Harga sudah termasuk</div>
+      <div style="font-size:12px;font-weight:700;color:var(--gold)">Diskon Mitra s.d. 25%</div>
+    </div>
+  </div>
+
+  <div class="kat-layout">
+    <!-- Filters -->
+    <div>
+      <div class="f-panel">
+        <div class="f-ttl">Kategori <button onclick="toast('Reset filter')">Reset</button></div>
+        <div class="f-opt on" onclick="togF(this)"><div class="f-cb">✓</div><label>Semua</label><span class="f-cnt">86</span></div>
+        <div class="f-opt" onclick="togF(this)"><div class="f-cb"></div><label>Sofa & Kursi</label><span class="f-cnt">24</span></div>
+        <div class="f-opt" onclick="togF(this)"><div class="f-cb"></div><label>Ranjang & Kasur</label><span class="f-cnt">18</span></div>
+        <div class="f-opt" onclick="togF(this)"><div class="f-cb"></div><label>Meja & Lemari</label><span class="f-cnt">21</span></div>
+        <div class="f-opt" onclick="togF(this)"><div class="f-cb"></div><label>Dekorasi & Lampu</label><span class="f-cnt">23</span></div>
+      </div>
+      <div class="f-panel">
+        <div class="f-ttl">Harga Supplier</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <input style="width:100%;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;outline:none;background:var(--bg)" placeholder="Min harga" value="500.000">
+          <input style="width:100%;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;outline:none;background:var(--bg)" placeholder="Max harga" value="15.000.000">
+          <button class="btn btn-p btn-sm" style="width:100%" onclick="toast('Filter harga diterapkan')">Terapkan</button>
+        </div>
+      </div>
+      <div class="f-panel">
+        <div class="f-ttl">Min. Order</div>
+        <div class="f-opt on" onclick="togF(this)"><div class="f-cb">✓</div><label>1 unit (no min)</label><span class="f-cnt">31</span></div>
+        <div class="f-opt" onclick="togF(this)"><div class="f-cb"></div><label>Min 3 unit</label><span class="f-cnt">28</span></div>
+        <div class="f-opt" onclick="togF(this)"><div class="f-cb"></div><label>Min 5 unit</label><span class="f-cnt">27</span></div>
+      </div>
+      <div class="f-panel">
+        <div class="f-ttl">Status Stok</div>
+        <div class="f-opt on" onclick="togF(this)"><div class="f-cb">✓</div><label>Tersedia</label><span class="f-cnt">72</span></div>
+        <div class="f-opt" onclick="togF(this)"><div class="f-cb"></div><label>Pre-order</label><span class="f-cnt">9</span></div>
+        <div class="f-opt" onclick="togF(this)"><div class="f-cb"></div><label>Habis</label><span class="f-cnt">5</span></div>
+      </div>
+    </div>
+
+    <!-- Products -->
+    <div>
+      <div class="sort-row">
+        <p>Menampilkan <strong>86 produk supplier</strong> · Harga eksklusif mitra</p>
+        <select class="sort-sel"><option>Terlaris</option><option>Harga: Terendah</option><option>Harga: Tertinggi</option><option>Terbaru</option></select>
+      </div>
+      <div class="sprod-grid">
+        <div class="spc" onclick="openModal('Sofa Modular Scandinavian 3 Dudukan','HMS-SOFA-001','🛋️','linear-gradient(135deg,#E8D5B0,#D4A860)','Rp 6.375.000','Rp 8.500.000','3 unit','Sofa full-set, busa high-density, rangka kayu solid oak. Tersedia dalam 4 warna.','🛋️','Homera Studio')">
+          <div class="spc-img" style="background:linear-gradient(135deg,#E8D5B0,#D4A860)">🛋️<div class="spc-bdg hot">Terlaris</div><button class="spc-add" onclick="event.stopPropagation();toast('Ditambahkan ke keranjang!')">+</button></div>
+          <div class="spc-body"><div class="spc-brand">Homera Studio</div><div class="spc-name">Sofa Modular Scandinavian 3 Dudukan</div><div class="spc-sku">HMS-SOFA-001 · Min 3 unit</div><div class="spc-foot"><div><div class="spc-price">Rp 6.375.000</div><span class="spc-harga">Rp 8.500.000</span></div><button class="spc-btn" onclick="event.stopPropagation();openModal('Sofa Modular Scandinavian 3 Dudukan','HMS-SOFA-001','🛋️','linear-gradient(135deg,#E8D5B0,#D4A860)','Rp 6.375.000','Rp 8.500.000','3 unit','Sofa full-set, busa high-density, rangka kayu solid oak.','🛋️','Homera Studio')">Detail</button></div></div>
+        </div>
+        <div class="spc" onclick="openModal('Ranjang Kayu Oak King Size','WCC-BED-001','🛏️','linear-gradient(135deg,#B8C9A0,#8FAA78)','Rp 9.150.000','Rp 12.200.000','1 unit','Rangka kayu oak solid. Ukuran 180×200cm. Finishing natural + walnut.','🛏️','Woodcraft Co.')">
+          <div class="spc-img" style="background:linear-gradient(135deg,#B8C9A0,#8FAA78)">🛏️<div class="spc-bdg new">Baru</div><button class="spc-add" onclick="event.stopPropagation();toast('Ditambahkan ke keranjang!')">+</button></div>
+          <div class="spc-body"><div class="spc-brand">Woodcraft Co.</div><div class="spc-name">Ranjang Kayu Oak King Size</div><div class="spc-sku">WCC-BED-001 · Min 1 unit</div><div class="spc-foot"><div><div class="spc-price">Rp 9.150.000</div><span class="spc-harga">Rp 12.200.000</span></div><button class="spc-btn" onclick="event.stopPropagation();openModal('Ranjang Kayu Oak King Size','WCC-BED-001','🛏️','linear-gradient(135deg,#B8C9A0,#8FAA78)','Rp 9.150.000','Rp 12.200.000','1 unit','Rangka kayu oak solid 180×200cm.','🛏️','Woodcraft Co.')">Detail</button></div></div>
+        </div>
+        <div class="spc" onclick="openModal('Meja Makan Jati 6 Kursi','TGR-TABLE-002','🍽️','linear-gradient(135deg,#F0D5B8,#C4572A22)','Rp 4.350.000','Rp 5.800.000','1 unit','Set meja makan jati solid + 6 kursi. Garansi 2 tahun rangka.','🍽️','Teak & Grain')">
+          <div class="spc-img" style="background:linear-gradient(135deg,#F0D5B8,#C4572A22)">🍽️<div class="spc-bdg sale">Promo</div><button class="spc-add" onclick="event.stopPropagation();toast('Ditambahkan ke keranjang!')">+</button></div>
+          <div class="spc-body"><div class="spc-brand">Teak & Grain</div><div class="spc-name">Meja Makan Jati 6 Kursi</div><div class="spc-sku">TGR-TABLE-002 · Min 1 unit</div><div class="spc-foot"><div><div class="spc-price">Rp 4.350.000</div><span class="spc-harga">Rp 5.800.000</span></div><button class="spc-btn" onclick="event.stopPropagation();openModal('Meja Makan Jati 6 Kursi','TGR-TABLE-002','🍽️','linear-gradient(135deg,#F0D5B8,#C4572A22)','Rp 4.350.000','Rp 5.800.000','1 unit','Set meja makan jati solid + 6 kursi.','🍽️','Teak & Grain')">Detail</button></div></div>
+        </div>
+        <div class="spc" onclick="openModal('Lampu Gantung Rattan Artisan','LLI-LAMP-003','💡','linear-gradient(135deg,#D0C4E8,#9B86C4)','Rp 875.000','Rp 1.250.000','5 unit','Lampu rattan handmade. E27 max 60W. Kabel 1.5m adjustable.','💡','LuxeLight ID')">
+          <div class="spc-img" style="background:linear-gradient(135deg,#D0C4E8,#9B86C4)">💡<button class="spc-add" onclick="event.stopPropagation();toast('Ditambahkan ke keranjang!')">+</button></div>
+          <div class="spc-body"><div class="spc-brand">LuxeLight ID</div><div class="spc-name">Lampu Gantung Rattan Artisan</div><div class="spc-sku">LLI-LAMP-003 · Min 5 unit</div><div class="spc-foot"><div><div class="spc-price">Rp 875.000</div><span class="spc-harga">Rp 1.250.000</span></div><button class="spc-btn" onclick="event.stopPropagation();openModal('Lampu Gantung Rattan Artisan','LLI-LAMP-003','💡','linear-gradient(135deg,#D0C4E8,#9B86C4)','Rp 875.000','Rp 1.250.000','5 unit','Lampu rattan handmade.','💡','LuxeLight ID')">Detail</button></div></div>
+        </div>
+        <div class="spc" onclick="openModal('Cermin Dinding Arch Minimalis','MMD-MIRR-001','🪞','linear-gradient(135deg,#F5D5C0,#E8904A33)','Rp 1.575.000','Rp 2.100.000','1 unit','Cermin arch 60×140cm. Frame kayu solid. Gantung atau sandar.','🪞','MirrorMade')">
+          <div class="spc-img" style="background:linear-gradient(135deg,#F5D5C0,#E8904A33)">🪞<div class="spc-bdg new">Baru</div><button class="spc-add" onclick="event.stopPropagation();toast('Ditambahkan ke keranjang!')">+</button></div>
+          <div class="spc-body"><div class="spc-brand">MirrorMade</div><div class="spc-name">Cermin Dinding Arch Minimalis</div><div class="spc-sku">MMD-MIRR-001 · Min 1 unit</div><div class="spc-foot"><div><div class="spc-price">Rp 1.575.000</div><span class="spc-harga">Rp 2.100.000</span></div><button class="spc-btn" onclick="event.stopPropagation();openModal('Cermin Dinding Arch Minimalis','MMD-MIRR-001','🪞','linear-gradient(135deg,#F5D5C0,#E8904A33)','Rp 1.575.000','Rp 2.100.000','1 unit','Cermin arch 60×140cm.','🪞','MirrorMade')">Detail</button></div></div>
+        </div>
+        <div class="spc" onclick="openModal('Rak Buku Modular Kayu Oak','WCC-SHELF-002','📚','linear-gradient(135deg,#C8DCE0,#7AB0BA)','Rp 2.775.000','Rp 3.700.000','2 unit','Rak modular 5 tingkat. Dapat dikombinasi. Maks beban 30kg/shelf.','📚','Woodcraft Co.')">
+          <div class="spc-img" style="background:linear-gradient(135deg,#C8DCE0,#7AB0BA)">📚<button class="spc-add" onclick="event.stopPropagation();toast('Ditambahkan ke keranjang!')">+</button></div>
+          <div class="spc-body"><div class="spc-brand">Woodcraft Co.</div><div class="spc-name">Rak Buku Modular Oak</div><div class="spc-sku">WCC-SHELF-002 · Min 2 unit</div><div class="spc-foot"><div><div class="spc-price">Rp 2.775.000</div><span class="spc-harga">Rp 3.700.000</span></div><button class="spc-btn" onclick="event.stopPropagation();openModal('Rak Buku Modular Kayu Oak','WCC-SHELF-002','📚','linear-gradient(135deg,#C8DCE0,#7AB0BA)','Rp 2.775.000','Rp 3.700.000','2 unit','Rak modular 5 tingkat.','📚','Woodcraft Co.')">Detail</button></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ CHAT COMMUNITY ════ -->
+<div class="page" id="p-comm">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px">
+    <div><div class="sec-lbl">Komunitas</div><div class="sec-ttl">Chat Community</div></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--muted)">32 anggota online</span>
+    </div>
+  </div>
+  <div class="comm-wrap">
+    <!-- Channels -->
+    <div class="comm-channels">
+      <div class="ch-hdr"><h3>Channels</h3><p>DexHome Community</p></div>
+      <div class="ch-sec">Umum</div>
+      <div class="ch-item active" onclick="selCh(this,'# umum','Diskusi umum antar mitra dan customer')"><div class="ch-ico">#</div><div class="ch-name">umum</div><div class="ch-cnt">3</div></div>
+      <div class="ch-item" onclick="selCh(this,'📢 pengumuman','Pengumuman resmi dari Center Admin')"><div class="ch-ico">📢</div><div class="ch-name">pengumuman</div></div>
+      <div class="ch-item" onclick="selCh(this,'# tips-desain','Berbagi tips dan inspirasi desain')"><div class="ch-ico">#</div><div class="ch-name">tips-desain</div><div class="ch-cnt">1</div></div>
+      <div class="ch-sec">Mitra</div>
+      <div class="ch-item" onclick="selCh(this,'🏬 mitra-forum','Forum diskusi khusus sesama mitra showroom')"><div class="ch-ico">🏬</div><div class="ch-name">mitra-forum</div><div class="ch-cnt">8</div></div>
+      <div class="ch-item" onclick="selCh(this,'# stok-update','Info stok dan ketersediaan dari supplier')"><div class="ch-ico">#</div><div class="ch-name">stok-update</div></div>
+      <div class="ch-item" onclick="selCh(this,'# promo-mitra','Informasi promo eksklusif mitra')"><div class="ch-ico">#</div><div class="ch-name">promo-mitra</div></div>
+      <div class="ch-sec">Terkunci</div>
+      <div class="ch-item" onclick="toast('Channel ini khusus Admin DexHome')"><div class="ch-ico">🔒</div><div class="ch-name" style="color:rgba(138,127,116,.4)">admin-internal</div><div class="ch-lock">🔒</div></div>
+    </div>
+
+    <!-- Chat area -->
+    <div class="comm-chat">
+      <div class="comm-hdr">
+        <div><div class="comm-hdr-name" id="commChName"># umum</div><div class="comm-hdr-desc" id="commChDesc">Diskusi umum antar mitra dan customer · 180 anggota</div></div>
+        <div class="comm-online">32 online</div>
+      </div>
+      <div class="comm-body" id="commBody">
+        <div class="c-sep">Kamis, 19 Mar 2026</div>
+        <!-- Pinned message -->
+        <div class="pinned-banner">
+          <div class="pin-ic">📌</div>
+          <div><div class="pin-txt"><strong>Pinned:</strong> Flash Sale April 2026 dimulai 1 April. Update stok sebelum 25 Maret! Detail di #pengumuman.</div><div class="pin-by">Disematkan oleh Center Admin · 19 Mar 2026</div></div>
+        </div>
+        <!-- Messages -->
+        <div class="cmsg">
+          <div class="cav" style="background:var(--gold);color:#0F0F12">CA</div>
+          <div><div class="cmeta"><div class="cname">Center Admin</div><span class="crole admin">Admin</span><div class="ctime">08.00</div></div><div class="cbbl">Selamat pagi semua! 📢 Flash Sale April sudah diumumkan ke customer. Mitra, mohon cek panel admin masing-masing dan update stok sebelum 25 Maret ya! 🙏</div><div class="creacts"><button class="creact on" onclick="togReact(this)">👍 12</button><button class="creact" onclick="togReact(this)">🙏 8</button></div></div>
+        </div>
+        <div class="cmsg">
+          <div class="cav" style="background:var(--brown);color:#fff">HS</div>
+          <div><div class="cmeta"><div class="cname">Homera Studio</div><span class="crole mitra">Mitra Anda</span><div class="ctime">08.14</div></div><div class="cbbl">Siap Admin! Stok sofa kami sudah dicek, ada 28 unit siap. Pertanyaan: untuk pengiriman &gt;500km, apakah perlu koordinasi langsung dengan tim logistik DexHome?</div><div class="creacts"><button class="creact" onclick="togReact(this)">👍 4</button><button class="creact" onclick="togReact(this)">❓ 2</button></div></div>
+        </div>
+        <div class="cmsg">
+          <div class="cav" style="background:var(--terra);color:#fff">WC</div>
+          <div><div class="cmeta"><div class="cname">Woodcraft Co.</div><span class="crole mitra">Mitra</span><div class="ctime">08.22</div></div><div class="cbbl">Pertanyaan yang sama! Dan untuk ranjang king size, apakah ada ketentuan khusus packaging pengiriman jauh?</div><div class="creacts"><button class="creact" onclick="togReact(this)">👍 3</button></div></div>
+        </div>
+        <div class="cmsg">
+          <div class="cav" style="background:var(--gold);color:#0F0F12">CA</div>
+          <div><div class="cmeta"><div class="cname">Center Admin</div><span class="crole admin">Admin</span><div class="ctime">08.35</div></div><div class="cbbl">Untuk pengiriman &gt;500km, gunakan form koordinasi di panel admin mitra. Tim logistik follow up 2 jam. Untuk item oversized seperti ranjang, ada SOP khusus di #stok-update 👆</div><div class="creacts"><button class="creact" onclick="togReact(this)">👍 8</button><button class="creact" onclick="togReact(this)">✅ 4</button></div></div>
+        </div>
+        <div class="cmsg">
+          <div class="cav" style="background:var(--blue);color:#fff">BS</div>
+          <div><div class="cmeta"><div class="cname">Budi Santoso</div><span class="crole" style="background:var(--bg);color:var(--muted)">Customer</span><div class="ctime">09.12</div></div><div class="cbbl">Halo mitra! Saya tertarik dengan sofa Homera. Apakah bisa custom ukuran? Dan estimasi pengiriman ke Bekasi berapa hari?</div><div class="creacts"><button class="creact" onclick="togReact(this)">👍 1</button></div></div>
+        </div>
+        <div class="cmsg me" id="myLastMsg">
+          <div class="cav" style="background:var(--brown);color:#fff">HS</div>
+          <div><div class="cmeta" style="flex-direction:row-reverse"><div class="cname">Homera Studio (Anda)</div><div class="ctime">09.18</div></div><div class="cbbl">Halo Budi! Custom ukuran bisa, minimal order 1 unit, lead time 14 hari kerja. Pengiriman ke Bekasi 2–3 hari. Bisa DM langsung atau ke showroom kami di Kemang 😊</div><div class="creacts" style="justify-content:flex-end"><button class="creact" onclick="togReact(this)">❤️ 3</button><button class="creact" onclick="togReact(this)">👍 2</button></div></div>
+        </div>
+      </div>
+      <div class="comm-inp">
+        <div class="comm-inp-row">
+          <textarea id="commInp" placeholder="Kirim pesan ke # umum sebagai Homera Studio..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendComm()}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+          <button class="comm-ic-btn" onclick="toast('Tambah emoji')">😊</button>
+          <button class="comm-ic-btn" onclick="toast('Lampirkan file')">📎</button>
+          <button class="comm-send" onclick="sendComm()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Members -->
+    <div class="comm-members">
+      <div class="mb-hdr">Anggota (180)</div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--gold);color:#0F0F12">CA</div><div class="mb-info"><div class="mb-name">Center Admin</div><div class="mb-role">Administrator</div></div><div class="mb-dot on"></div></div>
+      <div class="mb-item" style="background:var(--gold-p)"><div class="mb-av" style="background:var(--brown);color:#fff">HS</div><div class="mb-info"><div class="mb-name">Homera Studio</div><div class="mb-role" style="color:var(--gold)">Anda · Mitra</div></div><div class="mb-dot on"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--terra);color:#fff">WC</div><div class="mb-info"><div class="mb-name">Woodcraft Co.</div><div class="mb-role">Mitra</div></div><div class="mb-dot on"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--blue);color:#fff">BS</div><div class="mb-info"><div class="mb-name">Budi Santoso</div><div class="mb-role">Customer · Gold</div></div><div class="mb-dot on"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--purple,#8B7CC8);color:#fff">DK</div><div class="mb-info"><div class="mb-name">Dewi Kusuma</div><div class="mb-role">Customer · Silver</div></div><div class="mb-dot on"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--sage);color:#fff">TG</div><div class="mb-info"><div class="mb-name">Teak & Grain</div><div class="mb-role">Mitra</div></div><div class="mb-dot off"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--bdr);color:var(--muted)">LL</div><div class="mb-info"><div class="mb-name">LuxeLight ID</div><div class="mb-role">Mitra</div></div><div class="mb-dot off"></div></div>
+      <div style="padding:10px 14px;font-size:11px;color:var(--muted);text-align:center">+173 anggota lainnya</div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- Product Modal -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="sec-lbl">Detail Produk Supplier</div>
+        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--brown)" id="modal-name">-</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-img" id="modal-img">🛋️</div>
+      <div class="modal-grid">
+        <div class="modal-field"><div class="modal-field-lbl">Harga Supplier (Mitra)</div><div class="modal-field-val" id="modal-price" style="font-family:'Playfair Display',serif;font-size:18px;color:var(--gold)">-</div></div>
+        <div class="modal-field"><div class="modal-field-lbl">Harga Eceran</div><div class="modal-field-val" id="modal-retail" style="text-decoration:line-through;color:var(--muted)">-</div></div>
+        <div class="modal-field"><div class="modal-field-lbl">SKU</div><div class="modal-field-val" id="modal-sku" style="font-family:monospace">-</div></div>
+        <div class="modal-field"><div class="modal-field-lbl">Min. Order</div><div class="modal-field-val" id="modal-min">-</div></div>
+        <div class="modal-field"><div class="modal-field-lbl">Brand / Supplier</div><div class="modal-field-val" id="modal-brand">-</div></div>
+        <div class="modal-field"><div class="modal-field-lbl">Est. Pengiriman</div><div class="modal-field-val">3–5 hari kerja</div></div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:12px 14px;margin-bottom:16px">
+        <div class="modal-field-lbl" style="margin-bottom:5px">Deskripsi</div>
+        <div style="font-size:13px;color:var(--brown);line-height:1.7" id="modal-desc">-</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div><div class="modal-field-lbl">Jumlah Order</div>
+          <div class="qty-ctrl" style="margin-top:5px">
+            <button class="qty-btn" onclick="adjQty(-1)">−</button>
+            <input class="qty-inp" id="modalQty" value="3" readonly>
+            <button class="qty-btn" onclick="adjQty(1)">+</button>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="modal-field-lbl">Total Harga</div>
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--brown);margin-top:3px" id="modalTotal">-</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-p" style="flex:1;justify-content:center" onclick="addToCart()">🛒 Tambah ke Keranjang</button>
+        <button class="btn btn-o" onclick="closeModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const pgTitles={announce:'Pengumuman',katalog:'Katalog Supplier',comm:'Chat Community'};
+function go(name,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));document.getElementById('p-'+name).classList.add('active');if(btn)btn.classList.add('active');document.getElementById('tbtitle').textContent=pgTitles[name]||name;closeSB()}
+function openSB(){document.getElementById('sb').classList.add('open');document.getElementById('sov').classList.add('open');document.body.style.overflow='hidden'}
+function closeSB(){document.getElementById('sb').classList.remove('open');document.getElementById('sov').classList.remove('open');document.body.style.overflow=''}
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),3000)}
+function togFtab(el){document.querySelectorAll('.ftab').forEach(f=>f.classList.remove('active'));el.classList.add('active')}
+function toggleAnn(el){const wasOpen=el.classList.contains('open');document.querySelectorAll('.ann-card').forEach(a=>a.classList.remove('open'));if(!wasOpen){el.classList.add('open');el.querySelector('.ann-unread-dot')&&el.querySelector('.ann-unread-dot').remove()}}
+function togF(el){el.classList.toggle('on');el.querySelector('.f-cb').textContent=el.classList.contains('on')?'✓':''}
+let modalPriceVal=6375000;
+function openModal(name,sku,emoji,bg,price,retail,minOrd,desc,ico,brand){
+  document.getElementById('modal-name').textContent=name;
+  document.getElementById('modal-img').style.background=bg;
+  document.getElementById('modal-img').textContent=emoji;
+  document.getElementById('modal-price').textContent=price;
+  document.getElementById('modal-retail').textContent=retail;
+  document.getElementById('modal-sku').textContent=sku;
+  document.getElementById('modal-min').textContent=minOrd;
+  document.getElementById('modal-brand').textContent=brand;
+  document.getElementById('modal-desc').textContent=desc;
+  document.getElementById('modalQty').value=parseInt(minOrd);
+  modalPriceVal=parseInt(price.replace(/\D/g,''));
+  updateTotal();
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function adjQty(d){const i=document.getElementById('modalQty');i.value=Math.max(1,parseInt(i.value)+d);updateTotal()}
+function updateTotal(){const q=parseInt(document.getElementById('modalQty').value);document.getElementById('modalTotal').textContent='Rp '+( modalPriceVal*q).toLocaleString('id')}
+function addToCart(){toast('✅ Ditambahkan ke keranjang pengadaan!');closeModal()}
+function selCh(el,name,desc){document.querySelectorAll('.ch-item').forEach(c=>c.classList.remove('active'));el.classList.add('active');document.getElementById('commChName').textContent=name;document.getElementById('commChDesc').textContent=desc+' · 180 anggota'}
+function togReact(el){el.classList.toggle('on')}
+function sendComm(){const i=document.getElementById('commInp');const t=i.value.trim();if(!t)return;const b=document.getElementById('commBody');const now=new Date().toLocaleTimeString('id',{hour:'2-digit',minute:'2-digit'});const el=document.createElement('div');el.className='cmsg me';el.innerHTML=`<div class="cav" style="background:var(--brown);color:#fff">HS</div><div><div class="cmeta" style="flex-direction:row-reverse"><div class="cname">Homera Studio (Anda)</div><div class="ctime">${now}</div></div><div class="cbbl">${t}</div><div class="creacts" style="justify-content:flex-end"><button class="creact" onclick="togReact(this)">❤️ 0</button></div></div>`;b.appendChild(el);i.value='';i.style.height='auto';b.scrollTop=9999}
+document.getElementById('commBody').scrollTop=9999;
+</script>
+</body>
+</html>

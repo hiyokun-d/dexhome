@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DexHome — Mitra Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#13111A;--surf:#1B1825;--surf2:#221F2E;--surf3:#2A2638;
+  --bdr:rgba(255,255,255,.07);--bdr2:rgba(255,255,255,.13);
+  --txt:#EDE8F5;--muted:rgba(237,232,245,.45);--muted2:rgba(237,232,245,.22);
+  --purple:#8B7CC8;--purple-l:#A898E0;--purple-p:rgba(139,124,200,.12);
+  --gold:#C9962A;--gold-l:#E8B84B;--gold-p:rgba(201,150,42,.10);
+  --terra:#C4572A;--sage:#7A8C6E;--blue:#4A90D9;
+  --sh:0 4px 24px rgba(0,0,0,.35);--sh2:0 12px 48px rgba(0,0,0,.45);
+  --nav:252px;--top:62px;--r:12px;--r2:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+.shell{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sb{width:var(--nav);flex-shrink:0;background:var(--surf);border-right:1px solid var(--bdr);position:fixed;top:0;left:0;bottom:0;z-index:300;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.16,1,.3,1)}
+.sb::-webkit-scrollbar{width:0}
+.sb-logo{padding:22px 20px 16px;border-bottom:1px solid var(--bdr)}
+.sb-lm{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--txt)}
+.sb-lm span{color:var(--purple-l)}
+.sb-role-tag{display:inline-flex;align-items:center;gap:5px;background:var(--purple-p);border:1px solid rgba(139,124,200,.3);border-radius:5px;padding:2px 10px;margin-top:5px}
+.sb-role-lbl{font-size:9px;font-weight:700;color:var(--purple-l);letter-spacing:.08em;text-transform:uppercase}
+.sb-mitra{padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+.sb-mav{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,var(--purple),#6B5AB8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sb-mname{font-size:12px;font-weight:700;color:var(--txt);line-height:1.2}
+.sb-mcode{font-size:10px;color:var(--muted);font-family:monospace;margin-top:1px}
+.sb-adm{font-size:10px;color:var(--purple-l);font-weight:600;margin-top:2px}
+.sb-nav{padding:12px 8px;flex:1;overflow-y:auto}
+.sb-sec{font-size:9px;font-weight:700;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;padding:0 10px;margin:12px 0 5px}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:var(--r2);cursor:pointer;transition:all .2s;color:var(--muted);font-size:12px;font-weight:500;margin-bottom:1px;border:none;background:none;width:100%;text-align:left}
+.ni:hover{background:var(--surf2);color:var(--txt)}
+.ni.active{background:var(--purple-p);color:var(--purple-l);font-weight:600;border:1px solid rgba(139,124,200,.2)}
+.ni .ic{font-size:16px;width:18px;text-align:center;flex-shrink:0}
+.ni .nb{margin-left:auto;background:var(--terra);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:100px}
+.sb-bot{padding:10px 8px;border-top:1px solid var(--bdr)}
+
+/* TOPBAR */
+.tb{position:fixed;top:0;left:var(--nav);right:0;height:var(--top);background:rgba(19,17,26,.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:14px;padding:0 24px;z-index:200}
+.tb-left{display:flex;flex-direction:column}
+.tb-title{font-size:15px;font-weight:600;color:var(--txt)}
+.tb-sub{font-size:11px;color:var(--muted)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:9px}
+.tb-srch{display:flex;align-items:center;gap:7px;background:var(--surf2);border:1px solid var(--bdr2);border-radius:100px;padding:7px 14px;transition:border-color .2s}
+.tb-srch:focus-within{border-color:var(--purple)}
+.tb-srch input{border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--txt);width:150px}
+.tb-srch input::placeholder{color:var(--muted)}
+.tb-ibtn{width:34px;height:34px;border-radius:8px;background:var(--surf2);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all .2s;position:relative}
+.tb-ibtn:hover{border-color:var(--purple);background:var(--purple-p)}
+.ndot{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--terra);border:1.5px solid var(--bg)}
+.ham{display:none;width:34px;height:34px;border-radius:8px;background:none;border:1px solid var(--bdr);align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--txt)}
+
+/* MAIN */
+.main{margin-left:var(--nav);padding-top:var(--top);min-height:100vh}
+.page{display:none;padding:24px 28px;animation:fadeUp .25s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:290}
+
+/* COMMON */
+.card{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);box-shadow:var(--sh)}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--purple-l);display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.sec-lbl::before{content:'';width:16px;height:2px;background:var(--purple-l)}
+.sec-ttl{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--txt);margin-bottom:2px}
+.btn{padding:8px 18px;border-radius:var(--r2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--purple);color:#fff}.btn-p:hover{background:var(--purple-l);transform:translateY(-1px)}
+.btn-g{background:var(--gold);color:#0F0F12}.btn-g:hover{background:var(--gold-l)}
+.btn-d{background:var(--surf3);color:var(--txt);border:1px solid var(--bdr2)}.btn-d:hover{border-color:var(--purple);background:var(--purple-p)}
+.btn-r{background:rgba(196,87,42,.15);color:var(--terra);border:1px solid rgba(196,87,42,.3)}.btn-r:hover{background:rgba(196,87,42,.25)}
+.btn-sm{padding:5px 12px;font-size:11px}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:100px;font-size:10px;font-weight:700}
+.b-pur{background:var(--purple-p);color:var(--purple-l)}
+.b-gold{background:rgba(201,150,42,.15);color:var(--gold)}
+.b-green{background:rgba(122,140,110,.15);color:var(--sage)}
+.b-red{background:rgba(196,87,42,.13);color:var(--terra)}
+.b-grey{background:var(--surf3);color:var(--muted)}
+.b-blue{background:rgba(74,144,217,.13);color:var(--blue)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.inp,.sel,.ta{width:100%;padding:9px 12px;border:1px solid var(--bdr2);border-radius:var(--r2);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--txt);background:var(--surf2);outline:none;transition:border-color .2s}
+.inp:focus,.sel:focus,.ta:focus{border-color:var(--purple)}
+.ta{resize:vertical;min-height:80px}
+.inp::placeholder,.ta::placeholder{color:var(--muted)}
+.lbl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;display:block}
+.fg{margin-bottom:14px}
+
+/* ══ DASHBOARD ══ */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--surf);border-radius:var(--r);padding:16px 18px;border:1px solid var(--bdr);box-shadow:var(--sh);position:relative;overflow:hidden;transition:all .2s}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.k1::after{background:var(--purple)}.kpi.k2::after{background:var(--gold)}.kpi.k3::after{background:var(--sage)}.kpi.k4::after{background:var(--terra)}
+.kpi-ic{font-size:22px;margin-bottom:8px}
+.kpi-lb{font-size:10px;color:var(--muted);font-weight:500;margin-bottom:3px}
+.kpi-vl{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--txt);line-height:1}
+.kpi-sb{font-size:10px;color:var(--muted);margin-top:4px}
+
+/* Stock Table */
+.stk-tbl{width:100%;border-collapse:collapse}
+.stk-tbl th{text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--bdr);background:var(--surf2)}
+.stk-tbl td{padding:13px 14px;font-size:12px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.stk-tbl tr:last-child td{border-bottom:none}
+.stk-tbl tr:hover td{background:var(--surf2)}
+.prod-info{display:flex;align-items:center;gap:10px}
+.prod-ic{width:38px;height:38px;border-radius:8px;background:var(--surf3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:1px solid var(--bdr)}
+.prod-name{font-weight:600;color:var(--txt);font-size:12px;margin-bottom:1px}
+.prod-sku{font-size:10px;color:var(--muted);font-family:monospace}
+.stock-bar{display:flex;align-items:center;gap:8px}
+.sbar{height:6px;border-radius:100px;background:var(--surf3);flex:1;max-width:80px}
+.sbar-fill{height:100%;border-radius:100px}
+.sbar-fill.good{background:var(--sage)}.sbar-fill.warn{background:var(--gold)}.sbar-fill.low{background:var(--terra)}
+.stock-num{font-size:12px;font-weight:700;color:var(--txt)}
+
+/* Qty control */
+.qc{display:flex;align-items:center;border:1px solid var(--bdr2);border-radius:6px;overflow:hidden}
+.qb{width:28px;height:28px;background:var(--surf2);border:none;color:var(--txt);font-size:16px;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center}
+.qb:hover{background:var(--surf3)}
+.qi{width:44px;text-align:center;font-size:12px;font-weight:700;color:var(--txt);border:none;background:transparent;outline:none;font-family:'DM Sans',sans-serif}
+
+/* Alert bar */
+.alert-bar{border-radius:var(--r);padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.alert-bar.warn{background:rgba(201,150,42,.08);border:1px solid rgba(201,150,42,.25)}
+.alert-bar.danger{background:rgba(196,87,42,.08);border:1px solid rgba(196,87,42,.25)}
+.alert-bar.info{background:var(--purple-p);border:1px solid rgba(139,124,200,.25)}
+.alert-ic{font-size:20px;flex-shrink:0}
+.alert-txt{flex:1}
+.alert-t{font-size:12px;font-weight:700;color:var(--txt);margin-bottom:2px}
+.alert-s{font-size:11px;color:var(--muted)}
+
+/* Order list */
+.ord-item{padding:14px 16px;border-bottom:1px solid var(--bdr);transition:background .2s;cursor:pointer}
+.ord-item:last-child{border-bottom:none}
+.ord-item:hover{background:var(--surf2)}
+.ord-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:5px}
+.ord-id{font-size:11px;font-family:monospace;color:var(--muted)}
+.ord-prod-name{font-size:12px;font-weight:700;color:var(--txt);margin-bottom:2px}
+.ord-meta{font-size:11px;color:var(--muted)}
+.ord-price{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--gold)}
+
+/* ══ STOCK CHECK ══ */
+.stock-hero{background:linear-gradient(135deg,var(--surf2),var(--surf3));border-radius:14px;padding:20px 24px;margin-bottom:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;border:1px solid var(--bdr)}
+.stock-hero-item{text-align:center}
+.shi-ico{font-size:24px;margin-bottom:6px}
+.shi-val{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--txt);line-height:1}
+.shi-lbl{font-size:10px;color:var(--muted);margin-top:4px}
+
+/* Stock adjust panel */
+.stock-adj-panel{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);padding:20px}
+.adj-product-preview{background:var(--surf2);border-radius:var(--r2);padding:14px;display:flex;align-items:center;gap:14px;margin-bottom:16px;border:1px solid var(--bdr)}
+.adj-hist{max-height:240px;overflow-y:auto}
+.adj-hist::-webkit-scrollbar{width:3px}
+.adj-hist::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:10px}
+.adj-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr)}
+.adj-item:last-child{border-bottom:none}
+.adj-ic{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.adj-ic.in{background:rgba(122,140,110,.15)}.adj-ic.out{background:rgba(196,87,42,.12)}.adj-ic.adj{background:var(--purple-p)}
+.adj-t{font-size:12px;font-weight:600;color:var(--txt);margin-bottom:1px}
+.adj-s{font-size:10px;color:var(--muted)}
+.adj-v{font-family:'Playfair Display',serif;font-size:14px;font-weight:700}
+.adj-v.plus{color:var(--sage)}.adj-v.minus{color:var(--terra)}
+
+/* ══ INPUT POIN ══ */
+.pts-form-wrap{display:grid;grid-template-columns:1fr 340px;gap:20px}
+.customer-lookup{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);padding:18px;margin-bottom:14px}
+.cust-result{background:var(--surf2);border-radius:var(--r2);padding:14px;border:1px solid var(--bdr);display:none}
+.cust-result.show{display:flex;align-items:center;gap:12px}
+.cust-av{width:44px;height:44px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#0F0F12;flex-shrink:0}
+.cust-info{flex:1}
+.cust-name{font-size:14px;font-weight:700;color:var(--txt);margin-bottom:2px}
+.cust-tier{font-size:11px;display:flex;align-items:center;gap:6px}
+.cust-pts{font-size:11px;color:var(--muted);margin-top:2px}
+.cust-notfound{background:rgba(196,87,42,.08);border-radius:var(--r2);padding:12px;border:1px solid rgba(196,87,42,.2);font-size:12px;color:var(--terra);display:none}
+.cust-notfound.show{display:block}
+
+.pts-card-preview{background:linear-gradient(135deg,var(--surf2),var(--surf3));border-radius:var(--r);border:1px solid var(--bdr);padding:18px;position:sticky;top:78px}
+.pts-calc{background:var(--surf3);border-radius:var(--r2);padding:14px;margin-bottom:14px;border:1px solid var(--bdr)}
+.pts-calc-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bdr)}
+.pts-calc-row:last-child{border-bottom:none;font-size:15px;font-weight:700;padding-top:10px;margin-top:4px}
+.pts-calc-row:last-child .pcr-val{color:var(--gold);font-family:'Playfair Display',serif;font-size:18px}
+.pcr-lbl{font-size:11px;color:var(--muted)}
+.pcr-val{font-size:12px;font-weight:600;color:var(--txt)}
+
+/* History poin */
+.pts-hist{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto}
+.pts-hist::-webkit-scrollbar{width:3px}
+.pts-hist::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:10px}
+.ph-item{display:flex;align-items:center;gap:10px;background:var(--surf2);border-radius:8px;padding:11px 14px;border:1px solid var(--bdr)}
+.ph-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ph-ic.award{background:var(--purple-p)}.ph-ic.confirm{background:rgba(122,140,110,.15)}
+.ph-t{font-size:12px;font-weight:600;color:var(--txt);margin-bottom:2px}
+.ph-s{font-size:10px;color:var(--muted)}
+.ph-v{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--purple-l);margin-left:auto}
+
+/* ══ ANNOUNCEMENT ══ */
+.ann-grid{display:flex;flex-direction:column;gap:10px}
+.ann-item{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);overflow:hidden;box-shadow:var(--sh);transition:all .2s;cursor:pointer}
+.ann-item:hover{border-color:var(--bdr2);transform:translateY(-1px)}
+.ann-item.unread{border-left:3px solid var(--purple-l)}
+.ann-inner{padding:16px 18px;display:flex;gap:12px}
+.ann-ic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.ann-ic.promo{background:rgba(201,150,42,.12)}.ann-ic.sys{background:rgba(74,144,217,.10)}.ann-ic.event{background:rgba(122,140,110,.12)}.ann-ic.urgent{background:rgba(196,87,42,.10)}
+.ann-body{flex:1}
+.ann-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px}
+.ann-title{font-size:13px;font-weight:700;color:var(--txt);line-height:1.3}
+.ann-time{font-size:10px;color:var(--muted);flex-shrink:0;margin-top:2px}
+.ann-preview{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px}
+.ann-foot{display:flex;align-items:center;gap:7px}
+.ann-udot{width:7px;height:7px;border-radius:50%;background:var(--purple-l);margin-left:auto;flex-shrink:0}
+.ann-expanded{display:none;padding:0 18px 18px;border-top:1px solid var(--bdr)}
+.ann-item.open .ann-expanded{display:block}
+.ann-content{font-size:12px;line-height:1.8;color:var(--txt);padding-top:14px}
+.ann-content ul{margin-left:18px;margin-bottom:8px}
+.ann-content ul li{margin-bottom:5px;color:var(--muted)}
+.ann-content strong{color:var(--txt)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:10px 20px;border-radius:100px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;z-index:9999;box-shadow:var(--sh2);transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .4s;opacity:0;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* RESP */
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.pts-form-wrap{grid-template-columns:1fr}.stock-hero{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){:root{--nav:0px}.sb{transform:translateX(-252px);width:252px}.sb.open{transform:translateX(0)}.sov{display:block;opacity:0;pointer-events:none;transition:opacity .3s}.sov.open{opacity:1;pointer-events:all}.tb{left:0;padding:0 14px}.ham{display:flex}.main{margin-left:0}.page{padding:16px}}
+@media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}.stock-hero{grid-template-columns:repeat(2,1fr)}.tb-srch{display:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sb" id="sb">
+  <div class="sb-logo">
+    <div class="sb-lm">Dex<span>Home</span></div>
+    <div class="sb-role-tag"><span class="sb-role-lbl">🏬 Mitra Admin</span></div>
+  </div>
+  <div class="sb-mitra">
+    <div class="sb-mav">🏢</div>
+    <div>
+      <div class="sb-mname">Homera Studio Kemang</div>
+      <div class="sb-mcode">MTR-0001 · Kemang, Jaksel</div>
+      <div class="sb-adm">Admin: Rina Kusumawati</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Operasional</div>
+    <button class="ni active" onclick="go('dashboard',this)"><span class="ic">📊</span>Dashboard</button>
+    <button class="ni" onclick="go('stock',this)"><span class="ic">📦</span>Cek & Kelola Stok</button>
+    <button class="ni" onclick="go('inputpts',this)"><span class="ic">⭐</span>Input Poin Customer</button>
+    <div class="sb-sec">Informasi</div>
+    <button class="ni" onclick="go('announce',this)"><span class="ic">📢</span>Pengumuman<span class="nb">3</span></button>
+    <div class="sb-sec">Laporan</div>
+    <button class="ni" onclick="toast('Halaman laporan penjualan')"><span class="ic">📈</span>Laporan Penjualan</button>
+    <button class="ni" onclick="toast('Halaman order masuk')"><span class="ic">🛒</span>Order Masuk</button>
+  </nav>
+  <div class="sb-bot">
+    <button class="ni" onclick="toast('Keluar dari panel admin')"><span class="ic">🚪</span>Keluar</button>
+  </div>
+</aside>
+<div class="sov" id="sov" onclick="closeSB()"></div>
+
+<!-- TOPBAR -->
+<header class="tb">
+  <button class="ham" onclick="openSB()">☰</button>
+  <div class="tb-left">
+    <div class="tb-title" id="tbtitle">Dashboard</div>
+    <div class="tb-sub" id="tbsub">Homera Studio Kemang · Kamis, 19 Mar 2026</div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-srch"><span style="color:var(--muted);font-size:13px">🔍</span><input placeholder="Cari produk, customer..."></div>
+    <button class="tb-ibtn" onclick="toast('3 notifikasi baru')">🔔<div class="ndot"></div></button>
+    <button class="tb-ibtn" onclick="go('inputpts',document.querySelectorAll('.ni')[2])">⭐</button>
+  </div>
+</header>
+
+<main class="main">
+
+<!-- ════ DASHBOARD ════ -->
+<div class="page active" id="p-dashboard">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+    <div><div class="sec-lbl">Overview</div><div class="sec-ttl">Dashboard Showroom</div><p style="font-size:12px;color:var(--muted)">Homera Studio Kemang · Update terakhir: barusan</p></div>
+    <div style="display:flex;gap:8px">
+      <select class="sel" style="width:auto;padding:6px 12px;font-size:11px"><option>Hari Ini</option><option>7 Hari</option><option>Bulan Ini</option></select>
+      <button class="btn btn-d btn-sm" onclick="toast('Mengunduh laporan harian')">⬇ Laporan</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi k1"><div class="kpi-ic">💰</div><div class="kpi-lb">Omzet Bulan Ini</div><div class="kpi-vl">Rp 148<span style="font-size:12px;color:var(--muted)">jt</span></div><div class="kpi-sb" style="color:var(--sage)">↑ +12% vs bulan lalu</div></div>
+    <div class="kpi k2"><div class="kpi-ic">🛍️</div><div class="kpi-lb">Order Hari Ini</div><div class="kpi-vl">8</div><div class="kpi-sb">3 diproses · 5 selesai</div></div>
+    <div class="kpi k3"><div class="kpi-ic">📦</div><div class="kpi-lb">Total SKU Stok</div><div class="kpi-vl">18</div><div class="kpi-sb" style="color:var(--terra)">⚠️ 2 stok menipis</div></div>
+    <div class="kpi k4"><div class="kpi-ic">⭐</div><div class="kpi-lb">Poin Dikreditkan</div><div class="kpi-vl">2.840</div><div class="kpi-sb">Hari ini: +320 pts</div></div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="alert-bar warn">
+    <div class="alert-ic">⚠️</div>
+    <div class="alert-txt"><div class="alert-t">Stok Menipis: 2 Produk</div><div class="alert-s">Sofa Modular 2 Dudukan (3 unit tersisa) · Cermin Arch Minimalis (2 unit tersisa)</div></div>
+    <button class="btn btn-d btn-sm" onclick="go('stock',document.querySelectorAll('.ni')[1])">Kelola Stok →</button>
+  </div>
+  <div class="alert-bar info">
+    <div class="alert-ic">📢</div>
+    <div class="alert-txt"><div class="alert-t">Pengumuman Baru: Flash Sale April 2026</div><div class="alert-s">Update stok produk Anda sebelum 25 Maret untuk persiapan Flash Sale</div></div>
+    <button class="btn btn-p btn-sm" onclick="go('announce',document.querySelectorAll('.ni')[3])">Baca →</button>
+  </div>
+
+  <div class="grid2" style="margin-bottom:20px">
+    <!-- Order Masuk -->
+    <div class="card" style="overflow:hidden">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">
+        <div><div class="sec-lbl">Order</div><div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--txt)">Order Terbaru</div></div>
+        <button class="btn btn-d btn-sm" onclick="toast('Lihat semua order')">Lihat Semua</button>
+      </div>
+      <div>
+        <div class="ord-item" onclick="toast('Detail order #DXH-2603-0041')"><div class="ord-top"><div><div class="ord-id">#DXH-2603-0041</div><div class="ord-prod-name">Sofa Modular Scandinavian 3 Ddk</div><div class="ord-meta">Budi Santoso · Gold Member · 09.41 WIB</div></div><div style="text-align:right"><div class="ord-price">Rp 8.500.000</div><span class="badge b-gold" style="margin-top:4px">🚚 Diproses</span></div></div></div>
+        <div class="ord-item" onclick="toast('Detail order #DXH-2603-0040')"><div class="ord-top"><div><div class="ord-id">#DXH-2603-0040</div><div class="ord-prod-name">Kursi Makan Jati Set 4</div><div class="ord-meta">Dewi Kusuma · Silver Member · 08.14 WIB</div></div><div style="text-align:right"><div class="ord-price">Rp 4.200.000</div><span class="badge b-green" style="margin-top:4px">✓ Selesai</span></div></div></div>
+        <div class="ord-item" onclick="toast('Detail order #DXH-2603-0039')"><div class="ord-top"><div><div class="ord-id">#DXH-2603-0039</div><div class="ord-prod-name">Cermin Arch Minimalis</div><div class="ord-meta">Ahmad Rasyid · Silver Member · 07.58 WIB</div></div><div style="text-align:right"><div class="ord-price">Rp 2.100.000</div><span class="badge b-gold" style="margin-top:4px">📦 Disiapkan</span></div></div></div>
+        <div class="ord-item" onclick="toast('Detail order #DXH-2603-0038')"><div class="ord-top"><div><div class="ord-id">#DXH-2603-0038</div><div class="ord-prod-name">Lampu Gantung Rattan L</div><div class="ord-meta">Nadia Putri · Platinum Member · 07.12 WIB</div></div><div style="text-align:right"><div class="ord-price">Rp 1.250.000</div><span class="badge b-green" style="margin-top:4px">✓ Selesai</span></div></div></div>
+        <div class="ord-item" onclick="toast('Detail order #DXH-2603-0037')"><div class="ord-top"><div><div class="ord-id">#DXH-2603-0037</div><div class="ord-prod-name">Sofa L-Shape Premium</div><div class="ord-meta">Rizky Santoso · Gold Member · 06.44 WIB</div></div><div style="text-align:right"><div class="ord-price">Rp 14.800.000</div><span class="badge b-gold" style="margin-top:4px">🚚 Diproses</span></div></div></div>
+      </div>
+    </div>
+
+    <!-- Stok Cepat -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card" style="padding:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div><div class="sec-lbl">Stok</div><div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--txt)">Ringkasan Stok</div></div>
+          <button class="btn btn-p btn-sm" onclick="go('stock',document.querySelectorAll('.ni')[1])">Kelola →</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Sofa Scandinavian 3 Ddk</span><span style="font-weight:700;color:var(--txt)">28 unit</span></div><div style="height:5px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:85%;background:var(--sage);border-radius:100px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Kursi Makan Jati 4-set</span><span style="font-weight:700;color:var(--txt)">14 unit</span></div><div style="height:5px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:55%;background:var(--sage);border-radius:100px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Sofa Modular 2 Dudukan</span><span style="font-weight:700;color:var(--terra)">3 unit ⚠️</span></div><div style="height:5px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:12%;background:var(--terra);border-radius:100px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Cermin Arch Minimalis</span><span style="font-weight:700;color:var(--terra)">2 unit ⚠️</span></div><div style="height:5px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:8%;background:var(--terra);border-radius:100px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Lampu Rattan Artisan</span><span style="font-weight:700;color:var(--txt)">42 unit</span></div><div style="height:5px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:70%;background:var(--sage);border-radius:100px"></div></div></div>
+        </div>
+      </div>
+      <div class="card" style="padding:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div><div class="sec-lbl">Poin</div><div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--txt)">Input Poin Hari Ini</div></div>
+          <button class="btn btn-p btn-sm" onclick="go('inputpts',document.querySelectorAll('.ni')[2])">+ Input →</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="ph-item"><div class="ph-ic confirm">✅</div><div><div class="ph-t">Budi Santoso · #DXH-2603-0041</div><div class="ph-s">09.41 · Sofa Modular 3 Ddk</div></div><div class="ph-v">+850</div></div>
+          <div class="ph-item"><div class="ph-ic confirm">✅</div><div><div class="ph-t">Dewi Kusuma · #DXH-2603-0040</div><div class="ph-s">08.14 · Kursi Makan 4-set</div></div><div class="ph-v">+420</div></div>
+          <div class="ph-item"><div class="ph-ic confirm">✅</div><div><div class="ph-t">Ahmad Rasyid · #DXH-2603-0039</div><div class="ph-s">07.58 · Cermin Arch</div></div><div class="ph-v">+210</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performa Chart -->
+  <div class="card" style="padding:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div><div class="sec-lbl">Performa</div><div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--txt)">Penjualan 7 Hari Terakhir</div></div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><div style="width:12px;height:3px;border-radius:2px;background:var(--purple)"></div>Order</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><div style="width:12px;height:3px;border-radius:2px;background:var(--gold)"></div>Omzet (juta)</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:12px;height:100px;padding:0 4px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1"><div style="display:flex;align-items:flex-end;gap:3px;height:80px"><div style="width:14px;border-radius:3px 3px 0 0;background:var(--purple);height:62%" title="7 order"></div><div style="width:14px;border-radius:3px 3px 0 0;background:var(--gold);opacity:.8;height:55%" title="Rp 22jt"></div></div><div style="font-size:9px;color:var(--muted)">Sen</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1"><div style="display:flex;align-items:flex-end;gap:3px;height:80px"><div style="width:14px;border-radius:3px 3px 0 0;background:var(--purple);height:75%"></div><div style="width:14px;border-radius:3px 3px 0 0;background:var(--gold);opacity:.8;height:68%"></div></div><div style="font-size:9px;color:var(--muted)">Sel</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1"><div style="display:flex;align-items:flex-end;gap:3px;height:80px"><div style="width:14px;border-radius:3px 3px 0 0;background:var(--purple);height:50%"></div><div style="width:14px;border-radius:3px 3px 0 0;background:var(--gold);opacity:.8;height:44%"></div></div><div style="font-size:9px;color:var(--muted)">Rab</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1"><div style="display:flex;align-items:flex-end;gap:3px;height:80px"><div style="width:14px;border-radius:3px 3px 0 0;background:var(--purple);height:88%"></div><div style="width:14px;border-radius:3px 3px 0 0;background:var(--gold);opacity:.8;height:82%"></div></div><div style="font-size:9px;color:var(--muted)">Kam</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1"><div style="display:flex;align-items:flex-end;gap:3px;height:80px"><div style="width:14px;border-radius:3px 3px 0 0;background:var(--purple);height:100%"></div><div style="width:14px;border-radius:3px 3px 0 0;background:var(--gold);opacity:.8;height:92%"></div></div><div style="font-size:9px;color:var(--muted)">Jum</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1"><div style="display:flex;align-items:flex-end;gap:3px;height:80px"><div style="width:14px;border-radius:3px 3px 0 0;background:var(--purple);height:70%"></div><div style="width:14px;border-radius:3px 3px 0 0;background:var(--gold);opacity:.8;height:65%"></div></div><div style="font-size:9px;color:var(--muted)">Sab</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1"><div style="display:flex;align-items:flex-end;gap:3px;height:80px"><div style="width:14px;border-radius:3px 3px 0 0;background:var(--purple);height:42%"></div><div style="width:14px;border-radius:3px 3px 0 0;background:var(--gold);opacity:.8;height:36%"></div></div><div style="font-size:9px;color:var(--muted)">Min</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ STOCK ════ -->
+<div class="page" id="p-stock">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+    <div><div class="sec-lbl">Inventori</div><div class="sec-ttl">Cek & Kelola Stok</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-d btn-sm" onclick="toast('Export laporan stok')">⬇ Export</button>
+      <button class="btn btn-p btn-sm" onclick="toast('Request penambahan stok ke Center')">+ Request Stok</button>
+    </div>
+  </div>
+
+  <div class="stock-hero">
+    <div class="stock-hero-item"><div class="shi-ico">📦</div><div class="shi-val">18</div><div class="shi-lbl">Total SKU</div></div>
+    <div class="stock-hero-item"><div class="shi-ico" style="color:var(--sage)">✅</div><div class="shi-val" style="color:var(--sage)">14</div><div class="shi-lbl">Stok Aman</div></div>
+    <div class="stock-hero-item"><div class="shi-ico" style="color:var(--gold)">⚠️</div><div class="shi-val" style="color:var(--gold)">2</div><div class="shi-lbl">Stok Menipis</div></div>
+    <div class="stock-hero-item"><div class="shi-ico" style="color:var(--terra)">🚫</div><div class="shi-val" style="color:var(--terra)">2</div><div class="shi-lbl">Stok Habis</div></div>
+  </div>
+
+  <!-- Filter -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+    <input class="inp" style="max-width:240px;padding:7px 12px" placeholder="Cari produk atau SKU...">
+    <select class="sel" style="width:auto;padding:7px 12px;font-size:11px"><option>Semua Kategori</option><option>Sofa & Kursi</option><option>Meja & Lemari</option><option>Dekorasi</option></select>
+    <select class="sel" style="width:auto;padding:7px 12px;font-size:11px"><option>Semua Status</option><option>Aman</option><option>Menipis</option><option>Habis</option></select>
+    <button class="btn btn-d btn-sm" style="padding:7px 14px" onclick="toast('Filter diterapkan')">Filter</button>
+  </div>
+
+  <div class="card" style="overflow:hidden;margin-bottom:20px">
+    <table class="stk-tbl">
+      <thead><tr><th>Produk</th><th>SKU</th><th>Kategori</th><th>Stok Saat Ini</th><th>Threshold</th><th>Status</th><th>Ubah Stok</th><th>Aksi</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="prod-info"><div class="prod-ic">🛋️</div><div><div class="prod-name">Sofa Modular Scandinavian 3 Dudukan</div><div class="prod-sku">HMS-SOFA-003</div></div></div></td>
+          <td style="font-size:11px;font-family:monospace;color:var(--muted)">HMS-SOFA-003</td>
+          <td><span class="badge b-pur">Sofa</span></td>
+          <td><div class="stock-bar"><div class="sbar"><div class="sbar-fill good" style="width:85%"></div></div><span class="stock-num">28</span></div></td>
+          <td style="font-size:11px;color:var(--muted)">Min 5</td>
+          <td><span class="badge b-green">✓ Aman</span></td>
+          <td><div class="qc"><button class="qb" onclick="adjStk(this,-1)">−</button><input class="qi" value="28" readonly><button class="qb" onclick="adjStk(this,1)">+</button></div></td>
+          <td><button class="btn btn-d btn-sm" onclick="toast('Stok disimpan!')">💾</button></td>
+        </tr>
+        <tr>
+          <td><div class="prod-info"><div class="prod-ic">🪑</div><div><div class="prod-name">Kursi Makan Jati Set 4</div><div class="prod-sku">HMS-CHR-001</div></div></div></td>
+          <td style="font-size:11px;font-family:monospace;color:var(--muted)">HMS-CHR-001</td>
+          <td><span class="badge b-pur">Kursi</span></td>
+          <td><div class="stock-bar"><div class="sbar"><div class="sbar-fill good" style="width:55%"></div></div><span class="stock-num">14</span></div></td>
+          <td style="font-size:11px;color:var(--muted)">Min 3</td>
+          <td><span class="badge b-green">✓ Aman</span></td>
+          <td><div class="qc"><button class="qb" onclick="adjStk(this,-1)">−</button><input class="qi" value="14" readonly><button class="qb" onclick="adjStk(this,1)">+</button></div></td>
+          <td><button class="btn btn-d btn-sm" onclick="toast('Stok disimpan!')">💾</button></td>
+        </tr>
+        <tr style="background:rgba(196,87,42,.04)">
+          <td><div class="prod-info"><div class="prod-ic">🛋️</div><div><div class="prod-name">Sofa Modular 2 Dudukan</div><div class="prod-sku">HMS-SOFA-002</div></div></div></td>
+          <td style="font-size:11px;font-family:monospace;color:var(--muted)">HMS-SOFA-002</td>
+          <td><span class="badge b-pur">Sofa</span></td>
+          <td><div class="stock-bar"><div class="sbar"><div class="sbar-fill low" style="width:12%"></div></div><span class="stock-num" style="color:var(--terra)">3</span></div></td>
+          <td style="font-size:11px;color:var(--muted)">Min 5</td>
+          <td><span class="badge b-red">⚠️ Menipis</span></td>
+          <td><div class="qc"><button class="qb" onclick="adjStk(this,-1)">−</button><input class="qi" value="3" readonly><button class="qb" onclick="adjStk(this,1)">+</button></div></td>
+          <td><div style="display:flex;gap:4px"><button class="btn btn-d btn-sm" onclick="toast('Stok disimpan!')">💾</button><button class="btn btn-r btn-sm" onclick="toast('Request stok dikirim ke Center Admin')">📨</button></div></td>
+        </tr>
+        <tr style="background:rgba(196,87,42,.04)">
+          <td><div class="prod-info"><div class="prod-ic">🪞</div><div><div class="prod-name">Cermin Arch Minimalis</div><div class="prod-sku">HMS-MRR-001</div></div></div></td>
+          <td style="font-size:11px;font-family:monospace;color:var(--muted)">HMS-MRR-001</td>
+          <td><span class="badge b-gold">Dekorasi</span></td>
+          <td><div class="stock-bar"><div class="sbar"><div class="sbar-fill low" style="width:8%"></div></div><span class="stock-num" style="color:var(--terra)">2</span></div></td>
+          <td style="font-size:11px;color:var(--muted)">Min 5</td>
+          <td><span class="badge b-red">⚠️ Menipis</span></td>
+          <td><div class="qc"><button class="qb" onclick="adjStk(this,-1)">−</button><input class="qi" value="2" readonly><button class="qb" onclick="adjStk(this,1)">+</button></div></td>
+          <td><div style="display:flex;gap:4px"><button class="btn btn-d btn-sm" onclick="toast('Stok disimpan!')">💾</button><button class="btn btn-r btn-sm" onclick="toast('Request stok dikirim ke Center Admin')">📨</button></div></td>
+        </tr>
+        <tr>
+          <td><div class="prod-info"><div class="prod-ic">💡</div><div><div class="prod-name">Lampu Gantung Rattan Artisan</div><div class="prod-sku">LLI-LAMP-003</div></div></div></td>
+          <td style="font-size:11px;font-family:monospace;color:var(--muted)">LLI-LAMP-003</td>
+          <td><span class="badge b-gold">Lampu</span></td>
+          <td><div class="stock-bar"><div class="sbar"><div class="sbar-fill good" style="width:70%"></div></div><span class="stock-num">42</span></div></td>
+          <td style="font-size:11px;color:var(--muted)">Min 10</td>
+          <td><span class="badge b-green">✓ Aman</span></td>
+          <td><div class="qc"><button class="qb" onclick="adjStk(this,-1)">−</button><input class="qi" value="42" readonly><button class="qb" onclick="adjStk(this,1)">+</button></div></td>
+          <td><button class="btn btn-d btn-sm" onclick="toast('Stok disimpan!')">💾</button></td>
+        </tr>
+        <tr style="opacity:.5">
+          <td><div class="prod-info"><div class="prod-ic">🛏️</div><div><div class="prod-name">Ranjang Oak Single</div><div class="prod-sku">WCC-BED-002</div></div></div></td>
+          <td style="font-size:11px;font-family:monospace;color:var(--muted)">WCC-BED-002</td>
+          <td><span class="badge b-blue">Ranjang</span></td>
+          <td><div class="stock-bar"><div class="sbar"><div class="sbar-fill low" style="width:0%"></div></div><span class="stock-num" style="color:var(--terra)">0</span></div></td>
+          <td style="font-size:11px;color:var(--muted)">Min 2</td>
+          <td><span class="badge b-grey">🚫 Habis</span></td>
+          <td style="color:var(--muted);font-size:11px">—</td>
+          <td><button class="btn btn-r btn-sm" onclick="toast('Request stok dikirim')">📨 Request</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Adjustment history -->
+  <div class="grid2">
+    <div class="stock-adj-panel">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px">📝 Catat Penyesuaian Stok Manual</div>
+      <div class="fg"><label class="lbl">Produk</label>
+        <select class="sel"><option>Sofa Modular Scandinavian 3 Ddk</option><option>Kursi Makan Jati Set 4</option><option>Sofa Modular 2 Dudukan</option><option>Cermin Arch Minimalis</option><option>Lampu Gantung Rattan</option></select>
+      </div>
+      <div class="grid2">
+        <div class="fg"><label class="lbl">Tipe</label>
+          <select class="sel"><option>Masuk (Pengiriman Baru)</option><option>Keluar (Terjual)</option><option>Rusak / Defect</option><option>Retur Customer</option><option>Koreksi Manual</option></select>
+        </div>
+        <div class="fg"><label class="lbl">Jumlah Unit</label><input class="inp" type="number" min="1" value="5" placeholder="0"></div>
+      </div>
+      <div class="fg"><label class="lbl">Catatan</label><textarea class="ta" style="min-height:60px" placeholder="Keterangan penyesuaian stok..."></textarea></div>
+      <button class="btn btn-p" style="width:100%;justify-content:center" onclick="toast('✅ Penyesuaian stok berhasil dicatat!')">📦 Simpan Penyesuaian</button>
+    </div>
+    <div class="card" style="padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px">🕐 Riwayat Penyesuaian Stok</div>
+      <div class="adj-hist">
+        <div class="adj-item"><div class="adj-ic in">📥</div><div><div class="adj-t">Sofa Modular 3 Ddk · +10 unit</div><div class="adj-s">Pengiriman baru · 18 Mar 2026 · 14.00</div></div><div class="adj-v plus">+10</div></div>
+        <div class="adj-item"><div class="adj-ic out">📤</div><div><div class="adj-t">Cermin Arch · −1 unit</div><div class="adj-s">Terjual order #DXH-2603-0039 · 09.58</div></div><div class="adj-v minus">−1</div></div>
+        <div class="adj-item"><div class="adj-ic out">📤</div><div><div class="adj-t">Kursi Makan Jati · −1 unit</div><div class="adj-s">Terjual order #DXH-2603-0040 · 08.14</div></div><div class="adj-v minus">−1</div></div>
+        <div class="adj-item"><div class="adj-ic adj">⚡</div><div><div class="adj-t">Sofa 2 Ddk · Koreksi stok</div><div class="adj-s">Ditemukan 1 unit rusak · 17 Mar · 16.00</div></div><div class="adj-v minus">−1</div></div>
+        <div class="adj-item"><div class="adj-ic in">📥</div><div><div class="adj-t">Lampu Rattan · +20 unit</div><div class="adj-s">Pengiriman baru dari LuxeLight · 15 Mar</div></div><div class="adj-v plus">+20</div></div>
+        <div class="adj-item"><div class="adj-ic out">📤</div><div><div class="adj-t">Sofa Modular 3 Ddk · −2 unit</div><div class="adj-s">Terjual · 14 Mar 2026 · 11.22</div></div><div class="adj-v minus">−2</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ INPUT POIN ════ -->
+<div class="page" id="p-inputpts">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+    <div><div class="sec-lbl">Reward</div><div class="sec-ttl">Input Poin Customer</div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:12px;color:var(--muted)">Total dikreditkan hari ini: <strong style="color:var(--purple-l)">2.840 pts</strong></span>
+    </div>
+  </div>
+
+  <div class="pts-form-wrap">
+    <div>
+      <!-- Customer lookup -->
+      <div class="customer-lookup">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px">👤 Cari Customer</div>
+        <div class="fg"><label class="lbl">Nomor HP / ID Member</label>
+          <div style="display:flex;gap:8px">
+            <input class="inp" type="text" placeholder="Contoh: 0812-3456-7890 atau ID member" id="custSearch" value="0812-3456-7890">
+            <button class="btn btn-p" onclick="lookupCustomer()" style="flex-shrink:0">🔍 Cari</button>
+          </div>
+        </div>
+
+        <!-- Result: found -->
+        <div class="cust-result show" id="custFound">
+          <div class="cust-av">BS</div>
+          <div class="cust-info">
+            <div class="cust-name">Budi Santoso</div>
+            <div class="cust-tier"><span class="badge b-gold">👑 Gold Member</span><span style="font-size:10px;color:var(--muted)">sejak Jan 2025</span></div>
+            <div class="cust-pts">Total Poin: <strong style="color:var(--gold)">4.820 pts</strong> · Bergabung: 15 Jan 2025</div>
+          </div>
+          <span class="badge b-green">✓ Terverifikasi</span>
+        </div>
+        <!-- Not found -->
+        <div class="cust-notfound" id="custNotFound">
+          ❌ Customer tidak ditemukan. Pastikan nomor HP atau ID Member sudah benar.
+        </div>
+      </div>
+
+      <!-- Transaksi & Poin -->
+      <div class="card" style="padding:18px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px">🧾 Detail Transaksi</div>
+        <div class="grid2">
+          <div class="fg"><label class="lbl">Nomor Order / Nota</label><input class="inp" type="text" placeholder="#DXH-2603-..." value="#DXH-2603-0041" id="orderNum"></div>
+          <div class="fg"><label class="lbl">Tanggal Transaksi</label><input class="inp" type="datetime-local" value="2026-03-19T09:41"></div>
+        </div>
+        <div class="fg"><label class="lbl">Produk yang Dibeli</label>
+          <select class="sel" onchange="updatePtsCalc(this)">
+            <option value="8500000">Sofa Modular Scandinavian 3 Ddk · Rp 8.500.000</option>
+            <option value="4200000">Kursi Makan Jati Set 4 · Rp 4.200.000</option>
+            <option value="2100000">Cermin Arch Minimalis · Rp 2.100.000</option>
+            <option value="1250000">Lampu Gantung Rattan · Rp 1.250.000</option>
+            <option value="14800000">Sofa L-Shape Premium · Rp 14.800.000</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <div class="fg"><label class="lbl">Jumlah (unit)</label><input class="inp" type="number" min="1" value="1" id="qtyPts" oninput="recalcPts()"></div>
+          <div class="fg"><label class="lbl">Total Nilai Transaksi</label><input class="inp" type="text" value="Rp 8.500.000" id="txnVal" readonly style="color:var(--gold);font-weight:700"></div>
+        </div>
+        <div class="fg"><label class="lbl">Metode Pembayaran</label>
+          <select class="sel"><option>Transfer Bank / VA</option><option>QRIS</option><option>GoPay / OVO / DANA</option><option>Kartu Kredit</option><option>COD</option><option>Bayar di Showroom</option></select>
+        </div>
+        <div class="fg"><label class="lbl">Catatan (opsional)</label><textarea class="ta" style="min-height:55px" placeholder="Catatan tambahan jika ada..."></textarea></div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn btn-p" style="flex:1;justify-content:center" onclick="submitPts()">⭐ Kredit Poin Sekarang</button>
+          <button class="btn btn-d" onclick="resetForm()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div>
+      <div class="pts-card-preview">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px">📊 Kalkulasi Poin</div>
+        <div class="pts-calc">
+          <div class="pts-calc-row"><span class="pcr-lbl">Nilai Transaksi</span><span class="pcr-val" id="calcTxn">Rp 8.500.000</span></div>
+          <div class="pts-calc-row"><span class="pcr-lbl">Rate Poin</span><span class="pcr-val">1 poin / Rp 10.000</span></div>
+          <div class="pts-calc-row"><span class="pcr-lbl">Poin Dasar</span><span class="pcr-val" id="calcBase">850 pts</span></div>
+          <div class="pts-calc-row"><span class="pcr-lbl">Bonus Member Gold</span><span class="pcr-val" style="color:var(--gold)" id="calcBonus">+0 pts</span></div>
+          <div class="pts-calc-row"><div class="pcr-lbl">Total Poin Dikreditkan</div><div class="pcr-val" id="calcTotal">850 pts</div></div>
+        </div>
+
+        <div style="background:var(--purple-p);border:1px solid rgba(139,124,200,.25);border-radius:var(--r2);padding:12px;margin-bottom:16px">
+          <div style="font-size:10px;font-weight:700;color:var(--purple-l);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Setelah Dikreditkan</div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--muted)">Poin Sekarang</span><span style="color:var(--txt);font-weight:700">4.820 pts</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--muted)">Ditambahkan</span><span style="color:var(--sage);font-weight:700" id="addedPts">+850 pts</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding-top:6px;border-top:1px solid rgba(139,124,200,.2)"><span style="color:var(--txt)">Total Baru</span><span style="color:var(--purple-l);font-family:'Playfair Display',serif;font-size:16px" id="newTotal">5.670 pts</span></div>
+        </div>
+
+        <div style="background:rgba(201,150,42,.07);border:1px solid rgba(201,150,42,.2);border-radius:var(--r2);padding:10px 12px;font-size:11px;color:var(--muted);line-height:1.6">
+          💡 <strong style="color:var(--gold)">Gold Member</strong> mendapat poin standar. Upgrade ke Platinum untuk bonus +20%.
+        </div>
+      </div>
+
+      <!-- Input history hari ini -->
+      <div class="card" style="padding:18px;margin-top:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:12px">🕐 Dikreditkan Hari Ini</div>
+        <div class="pts-hist" id="ptsHistory">
+          <div class="ph-item"><div class="ph-ic confirm">✅</div><div><div class="ph-t">Budi Santoso</div><div class="ph-s">#DXH-2603-0041 · Sofa 3 Ddk · 09.41</div></div><div class="ph-v">+850</div></div>
+          <div class="ph-item"><div class="ph-ic confirm">✅</div><div><div class="ph-t">Dewi Kusuma</div><div class="ph-s">#DXH-2603-0040 · Kursi Makan · 08.14</div></div><div class="ph-v">+420</div></div>
+          <div class="ph-item"><div class="ph-ic confirm">✅</div><div><div class="ph-t">Ahmad Rasyid</div><div class="ph-s">#DXH-2603-0039 · Cermin Arch · 07.58</div></div><div class="ph-v">+210</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ ANNOUNCEMENT ════ -->
+<div class="page" id="p-announce">
+  <div style="margin-bottom:20px"><div class="sec-lbl">Info</div><div class="sec-ttl">Pengumuman dari DexHome</div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    <button class="btn btn-p btn-sm">Semua</button>
+    <button class="btn btn-d btn-sm" onclick="toast('Filter: Promosi')">📣 Promosi</button>
+    <button class="btn btn-d btn-sm" onclick="toast('Filter: Sistem')">⚙️ Sistem</button>
+    <button class="btn btn-d btn-sm" onclick="toast('Filter: Event')">🎪 Event</button>
+    <button class="btn btn-d btn-sm" onclick="toast('Filter: Sudah dibaca')">✅ Dibaca</button>
+  </div>
+  <div class="ann-grid">
+    <div class="ann-item unread" onclick="toggleAnn(this)">
+      <div class="ann-inner"><div class="ann-ic promo">📣</div><div class="ann-body"><div class="ann-top"><div class="ann-title">Flash Sale April 2026 — Update Stok Sebelum 25 Maret!</div><div class="ann-time">Hari ini, 09.00</div></div><div class="ann-preview">Flash Sale April akan mulai 1–15 April 2026. Pastikan semua produk Anda sudah update stok melalui panel admin sebelum 25 Maret. Diskon customer hingga 40%...</div><div class="ann-foot"><span class="badge b-gold">📣 Promosi</span><span class="badge b-red">🚨 Penting</span><div class="ann-udot"></div></div></div></div>
+      <div class="ann-expanded"><div class="ann-content"><p>Yth. Mitra Showroom,</p><p>Flash Sale April 2026 akan segera dimulai. Yang perlu dipersiapkan:</p><ul><li>Update stok produk paling lambat <strong>25 Maret 2026</strong></li><li>Koordinasi pengiriman massal dengan tim logistik DexHome</li><li>Diskon otomatis diterapkan platform</li><li>Estimasi order meningkat 3–5× dari hari biasa</li></ul><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-p btn-sm" onclick="event.stopPropagation();go('stock',document.querySelectorAll('.ni')[1])">📦 Update Stok Sekarang</button></div></div></div>
+    </div>
+    <div class="ann-item unread" onclick="toggleAnn(this)">
+      <div class="ann-inner"><div class="ann-ic sys">⚙️</div><div class="ann-body"><div class="ann-top"><div class="ann-title">Update Sistem v2.4 — Panel Mitra Diperbarui</div><div class="ann-time">15 Mar 2026</div></div><div class="ann-preview">Panel admin mitra kini hadir dengan fitur baru: dashboard stok real-time, notifikasi order instan, dan laporan penjualan mingguan otomatis via email...</div><div class="ann-foot"><span class="badge b-blue">⚙️ Sistem</span><div class="ann-udot"></div></div></div></div>
+      <div class="ann-expanded"><div class="ann-content"><p>Fitur baru di panel Mitra Admin:</p><ul><li><strong>Dashboard Stok Real-time</strong> — peringatan stok menipis otomatis</li><li><strong>Notifikasi Order Instan</strong> — push notification saat order masuk</li><li><strong>Laporan Mingguan</strong> — otomatis dikirim ke email setiap Senin</li><li><strong>Riwayat Poin Lebih Lengkap</strong> — filter dan export data poin</li></ul><p>Tidak diperlukan tindakan dari Anda. Update aktif otomatis.</p></div></div>
+    </div>
+    <div class="ann-item unread" onclick="toggleAnn(this)">
+      <div class="ann-inner"><div class="ann-ic event">🎪</div><div class="ann-body"><div class="ann-top"><div class="ann-title">DexHome Expo 2026 — Undangan Mitra Verified</div><div class="ann-time">10 Mar 2026</div></div><div class="ann-preview">Anda diundang berpartisipasi di DexHome Expo 2026, 20–22 Juni di Jakarta Convention Center. Booth standar GRATIS untuk mitra verified...</div><div class="ann-foot"><span class="badge b-green">🎪 Event</span><div class="ann-udot"></div></div></div></div>
+      <div class="ann-expanded"><div class="ann-content"><p>Detail DexHome Expo 2026:</p><ul><li><strong>Tanggal:</strong> 20–22 Juni 2026</li><li><strong>Lokasi:</strong> Jakarta Convention Center, Hall A & B</li><li><strong>Biaya booth:</strong> GRATIS untuk mitra verified (standar 6×4m)</li><li><strong>Estimasi pengunjung:</strong> 15.000+/hari</li></ul><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-p btn-sm" onclick="event.stopPropagation();toast('✅ Partisipasi dikonfirmasi!')">✅ Konfirmasi Ikut</button><button class="btn btn-d btn-sm" onclick="event.stopPropagation();toast('Terima kasih atas respons Anda')">Tidak Bisa</button></div></div></div>
+    </div>
+    <div class="ann-item" onclick="toggleAnn(this)" style="opacity:.75">
+      <div class="ann-inner"><div class="ann-ic promo">🏆</div><div class="ann-body"><div class="ann-top"><div class="ann-title">Homera Studio Masuk Top 5 Mitra Q1 2026!</div><div class="ann-time">1 Mar 2026</div></div><div class="ann-preview">Selamat! Anda berhasil masuk 5 besar mitra terbaik Q1 2026. Reward: bonus komisi +2% untuk April dan prioritas tampil di halaman utama...</div><div class="ann-foot"><span class="badge b-gold">🏆 Reward</span><span style="font-size:10px;color:var(--sage);margin-left:auto">✓ Dibaca</span></div></div></div>
+      <div class="ann-expanded"><div class="ann-content"><p>Penghargaan untuk Homera Studio:</p><ul><li><strong>Bonus Komisi +2%</strong> untuk bulan April 2026</li><li><strong>Featured Placement</strong> di halaman utama DexHome selama April</li><li><strong>Priority CS Support</strong> di Q2 2026</li><li><strong>Sertifikat Top Mitra</strong> dikirim ke alamat showroom</li></ul></div></div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const pgTitles={dashboard:'Dashboard',stock:'Cek & Kelola Stok',inputpts:'Input Poin Customer',announce:'Pengumuman'};
+const pgSubs={dashboard:'Homera Studio Kemang · Overview Hari Ini',stock:'Inventori & Penyesuaian Stok',inputpts:'Kredit Poin untuk Transaksi Customer',announce:'Informasi dari DexHome Center'};
+function go(name,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));document.getElementById('p-'+name).classList.add('active');if(btn)btn.classList.add('active');document.getElementById('tbtitle').textContent=pgTitles[name]||name;document.getElementById('tbsub').textContent=pgSubs[name]||'';closeSB()}
+function openSB(){document.getElementById('sb').classList.add('open');document.getElementById('sov').classList.add('open');document.body.style.overflow='hidden'}
+function closeSB(){document.getElementById('sb').classList.remove('open');document.getElementById('sov').classList.remove('open');document.body.style.overflow=''}
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),3000)}
+
+// Stock
+function adjStk(btn,d){const i=btn.parentElement.querySelector('.qi');i.value=Math.max(0,parseInt(i.value)+d);const nameEl=btn.closest('tr').querySelector('.prod-name');const lbl=nameEl?nameEl.textContent:'produk';if(parseInt(i.value)===0)toast('⚠️ Stok '+lbl+' habis! Pertimbangkan request stok.')}
+
+// Announcement
+function toggleAnn(el){const wasOpen=el.classList.contains('open');document.querySelectorAll('.ann-item').forEach(a=>a.classList.remove('open'));if(!wasOpen){el.classList.add('open');el.querySelector('.ann-udot')&&el.querySelector('.ann-udot').remove()}}
+
+// Poin Lookup
+function lookupCustomer(){const v=document.getElementById('custSearch').value.trim();if(v){document.getElementById('custFound').classList.add('show');document.getElementById('custNotFound').classList.remove('show')}else{document.getElementById('custFound').classList.remove('show');document.getElementById('custNotFound').classList.add('show')}}
+
+const RATE=850;let basePts=850;
+function updatePtsCalc(sel){const val=parseInt(sel.value);const txnStr='Rp '+val.toLocaleString('id');basePts=Math.round(val/10000);document.getElementById('txnVal').value=txnStr;document.getElementById('calcTxn').textContent=txnStr;document.getElementById('calcBase').textContent=basePts+' pts';document.getElementById('calcTotal').textContent=basePts+' pts';document.getElementById('calcBonus').textContent='+0 pts';document.getElementById('addedPts').textContent='+'+basePts+' pts';document.getElementById('newTotal').textContent=(4820+basePts).toLocaleString('id')+' pts'}
+function recalcPts(){const q=Math.max(1,parseInt(document.getElementById('qtyPts').value)||1);const total=basePts*q;document.getElementById('calcTotal').textContent=total+' pts';document.getElementById('addedPts').textContent='+'+total+' pts';document.getElementById('newTotal').textContent=(4820+total).toLocaleString('id')+' pts'}
+function submitPts(){const pts=document.getElementById('calcTotal').textContent;const order=document.getElementById('orderNum').value||'—';const now=new Date().toLocaleTimeString('id',{hour:'2-digit',minute:'2-digit'});const hist=document.getElementById('ptsHistory');const el=document.createElement('div');el.className='ph-item';el.style.borderLeft='2px solid var(--purple)';el.innerHTML=`<div class="ph-ic award">⭐</div><div><div class="ph-t">Budi Santoso</div><div class="ph-s">${order} · Baru saja · ${now}</div></div><div class="ph-v">${pts}</div>`;hist.insertBefore(el,hist.firstChild);toast('✅ Poin berhasil dikreditkan! '+pts)}
+function resetForm(){document.getElementById('custSearch').value='';document.getElementById('custFound').classList.remove('show');document.getElementById('orderNum').value='';document.getElementById('qtyPts').value=1;toast('Form direset')}
+</script>
+</body>
+</html>

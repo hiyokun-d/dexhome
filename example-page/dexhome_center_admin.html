@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DexHome — Center Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0F0F12;--surf:#18181D;--surf2:#1E1E25;--surf3:#24242C;
+  --bdr:rgba(255,255,255,.07);--bdr2:rgba(255,255,255,.12);
+  --txt:#F0EDE8;--muted:rgba(240,237,232,.45);--muted2:rgba(240,237,232,.25);
+  --gold:#C9962A;--gold-l:#E8B84B;--gold-p:rgba(201,150,42,.12);
+  --terra:#C4572A;--sage:#7A8C6E;--blue:#4A90D9;--purple:#8B7CC8;
+  --sh:0 4px 24px rgba(0,0,0,.3);--sh2:0 12px 48px rgba(0,0,0,.4);
+  --nav:250px;--top:60px;--r:12px;--r2:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+.shell{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sb{width:var(--nav);flex-shrink:0;background:var(--surf);border-right:1px solid var(--bdr);position:fixed;top:0;left:0;bottom:0;z-index:300;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.16,1,.3,1)}
+.sb::-webkit-scrollbar{width:0}
+.sb-logo{padding:22px 20px 16px;border-bottom:1px solid var(--bdr)}
+.sb-lm{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--txt)}
+.sb-lm span{color:var(--gold)}
+.sb-role{font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.sb-admin{padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+.sb-av{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--terra));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-aname{font-size:12px;font-weight:600;color:var(--txt)}
+.sb-arole{font-size:10px;color:var(--gold);font-weight:600}
+.sb-nav{padding:12px 8px;flex:1;overflow-y:auto}
+.sb-sec{font-size:9px;font-weight:700;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;padding:0 10px;margin:12px 0 5px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:var(--r2);cursor:pointer;transition:all .2s;color:var(--muted);font-size:12px;font-weight:500;margin-bottom:1px;border:none;background:none;width:100%;text-align:left}
+.ni:hover{background:var(--surf2);color:var(--txt)}
+.ni.active{background:var(--gold-p);color:var(--gold);font-weight:600;border:1px solid rgba(201,150,42,.2)}
+.ni .ic{font-size:16px;width:18px;text-align:center;flex-shrink:0}
+.ni .nb{margin-left:auto;background:var(--terra);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:100px}
+.sb-bot{padding:10px 8px;border-top:1px solid var(--bdr)}
+
+/* TOPBAR */
+.tb{position:fixed;top:0;left:var(--nav);right:0;height:var(--top);background:rgba(15,15,18,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;padding:0 24px;z-index:200}
+.tb-title{font-size:16px;font-weight:600;color:var(--txt)}
+.tb-breadcrumb{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.tb-breadcrumb span{color:var(--muted2)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tb-srch{display:flex;align-items:center;gap:7px;background:var(--surf2);border:1px solid var(--bdr2);border-radius:100px;padding:7px 14px;transition:border-color .2s}
+.tb-srch:focus-within{border-color:var(--gold)}
+.tb-srch input{border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--txt);width:160px}
+.tb-srch input::placeholder{color:var(--muted)}
+.tb-ibtn{width:34px;height:34px;border-radius:8px;background:var(--surf2);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all .2s;position:relative}
+.tb-ibtn:hover{border-color:var(--gold);background:var(--gold-p)}
+.ndot{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--terra);border:1.5px solid var(--bg)}
+.ham{display:none;width:34px;height:34px;border-radius:8px;background:none;border:1px solid var(--bdr);align-items:center;justify-content:center;font-size:17px;cursor:pointer;color:var(--txt)}
+
+/* MAIN */
+.main{margin-left:var(--nav);padding-top:var(--top);min-height:100vh}
+.page{display:none;padding:24px 28px;animation:fadeUp .25s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.s-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:290}
+
+/* COMMON */
+.card{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);box-shadow:var(--sh)}
+.card2{background:var(--surf2);border-radius:var(--r);border:1px solid var(--bdr)}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.sec-lbl::before{content:'';width:16px;height:2px;background:var(--gold)}
+.sec-ttl{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--txt);margin-bottom:2px}
+.btn{padding:8px 18px;border-radius:var(--r2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--gold);color:#0F0F12}.btn-p:hover{background:var(--gold-l);transform:translateY(-1px)}
+.btn-d{background:var(--surf3);color:var(--txt);border:1px solid var(--bdr2)}.btn-d:hover{border-color:var(--gold);background:var(--gold-p)}
+.btn-r{background:rgba(196,87,42,.15);color:var(--terra);border:1px solid rgba(196,87,42,.3)}.btn-r:hover{background:rgba(196,87,42,.25)}
+.btn-g{background:rgba(122,140,110,.15);color:var(--sage);border:1px solid rgba(122,140,110,.3)}.btn-g:hover{background:rgba(122,140,110,.25)}
+.btn-sm{padding:5px 12px;font-size:11px}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:100px;font-size:10px;font-weight:700}
+.b-gold{background:rgba(201,150,42,.15);color:var(--gold)}
+.b-green{background:rgba(122,140,110,.15);color:var(--sage)}
+.b-red{background:rgba(196,87,42,.13);color:var(--terra)}
+.b-blue{background:rgba(74,144,217,.13);color:var(--blue)}
+.b-grey{background:var(--surf3);color:var(--muted)}
+.b-purple{background:rgba(139,124,200,.13);color:var(--purple)}
+.divider{height:1px;background:var(--bdr);margin:16px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* INPUT SYSTEM */
+.fg{margin-bottom:14px}
+.lbl{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px;display:block}
+.inp,.sel,.ta{width:100%;padding:9px 12px;border:1px solid var(--bdr2);border-radius:var(--r2);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--txt);background:var(--surf2);outline:none;transition:border-color .2s}
+.inp:focus,.sel:focus,.ta:focus{border-color:var(--gold)}
+.ta{resize:vertical;min-height:80px}
+.inp::placeholder,.ta::placeholder{color:var(--muted)}
+
+/* ══ DASHBOARD ══ */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--surf);border-radius:var(--r);padding:16px 18px;border:1px solid var(--bdr);box-shadow:var(--sh);position:relative;overflow:hidden;transition:all .2s;cursor:default}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.k1::after{background:var(--gold)}.kpi.k2::after{background:var(--sage)}.kpi.k3::after{background:var(--blue)}.kpi.k4::after{background:var(--terra)}.kpi.k5::after{background:var(--purple)}
+.kpi-ic{font-size:22px;margin-bottom:8px}
+.kpi-lb{font-size:10px;color:var(--muted);font-weight:500;margin-bottom:3px}
+.kpi-vl{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--txt);line-height:1}
+.kpi-sb{font-size:10px;color:var(--muted);margin-top:4px}
+
+/* Charts (CSS-only bars) */
+.chart-wrap{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);padding:20px}
+.chart-title{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px}
+.chart-sub{font-size:11px;color:var(--muted);margin-bottom:16px}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.bar{width:100%;border-radius:4px 4px 0 0;background:var(--gold);opacity:.8;transition:opacity .2s;cursor:pointer;min-height:4px}
+.bar:hover{opacity:1}
+.bar.sage{background:var(--sage)}.bar.terra{background:var(--terra)}.bar.blue{background:var(--blue)}
+.bar-lbl{font-size:9px;color:var(--muted);text-align:center}
+.bar-val{font-size:9px;font-weight:700;color:var(--txt);text-align:center}
+
+/* Activity Feed */
+.act-item{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--bdr)}
+.act-item:last-child{border-bottom:none}
+.act-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.act-ic.add{background:rgba(122,140,110,.15)}.act-ic.edit{background:rgba(201,150,42,.12)}.act-ic.del{background:rgba(196,87,42,.12)}.act-ic.ann{background:rgba(74,144,217,.12)}.act-ic.cs{background:rgba(139,124,200,.12)}
+.act-desc{flex:1}
+.act-t{font-size:12px;font-weight:600;color:var(--txt);margin-bottom:2px}
+.act-s{font-size:11px;color:var(--muted)}
+.act-time{font-size:10px;color:var(--muted2);flex-shrink:0}
+
+/* ══ ADD PRODUCT ══ */
+.prod-form-wrap{display:grid;grid-template-columns:1fr 360px;gap:20px}
+.img-upload-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.img-slot{aspect-ratio:1;border-radius:8px;border:2px dashed var(--bdr2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:10px;color:var(--muted);gap:4px}
+.img-slot:hover{border-color:var(--gold);background:var(--gold-p)}
+.img-slot.filled{border-style:solid;border-color:var(--bdr);background:var(--surf3);font-size:32px;flex-direction:row}
+.img-slot-ico{font-size:22px;opacity:.5}
+.stock-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stock-item{background:var(--surf3);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px 12px}
+.stock-item-name{font-size:11px;color:var(--muted);margin-bottom:4px}
+.stock-item-val{font-size:18px;font-weight:700;color:var(--txt);font-family:'Playfair Display',serif}
+.stock-item-actions{display:flex;gap:6px;margin-top:8px}
+.qty-ctrl{display:flex;align-items:center;border:1px solid var(--bdr2);border-radius:6px;overflow:hidden}
+.qty-btn{width:28px;height:28px;background:var(--surf2);border:none;color:var(--txt);font-size:16px;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center}
+.qty-btn:hover{background:var(--surf3)}
+.qty-num{width:40px;text-align:center;font-size:12px;font-weight:700;color:var(--txt);border:none;background:transparent;outline:none;font-family:'DM Sans',sans-serif}
+.prod-preview{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);padding:18px;position:sticky;top:80px}
+.prev-img{height:180px;border-radius:var(--r2);background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:60px;margin-bottom:14px;border:1px solid var(--bdr)}
+.prev-brand{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.prev-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--txt);margin-bottom:6px;line-height:1.3}
+.prev-price{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:10px}
+.prev-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 9px;border-radius:4px}
+
+/* ══ MANAGE MITRA ══ */
+.mitra-tbl{width:100%;border-collapse:collapse}
+.mitra-tbl th{text-align:left;padding:10px 14px;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--bdr);background:var(--surf2)}
+.mitra-tbl td{padding:13px 14px;font-size:12px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.mitra-tbl tr:last-child td{border-bottom:none}
+.mitra-tbl tr:hover td{background:var(--surf2)}
+.mitra-info{display:flex;align-items:center;gap:10px}
+.mitra-av{width:40px;height:40px;border-radius:9px;background:var(--surf3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid var(--bdr)}
+.mitra-name{font-weight:600;color:var(--txt);font-size:12px;margin-bottom:1px}
+.mitra-code{font-size:10px;color:var(--muted);font-family:monospace}
+.act-btns{display:flex;gap:5px}
+
+/* Edit Mitra Panel */
+.edit-panel{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);padding:20px;display:none}
+.edit-panel.show{display:block}
+.map-mini{height:160px;background:linear-gradient(135deg,#1A2820,#1E2E24);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);border:1px solid var(--bdr);position:relative;overflow:hidden;cursor:pointer;margin-bottom:8px}
+.map-mini::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 30px,rgba(255,255,255,.03) 30px,rgba(255,255,255,.03) 31px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(255,255,255,.03) 40px,rgba(255,255,255,.03) 41px)}
+.map-mini-pin{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);font-size:28px}
+.mitra-img-slots{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.mitra-img-slot{height:80px;border-radius:8px;border:2px dashed var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .2s}
+.mitra-img-slot:hover{border-color:var(--gold);background:var(--gold-p)}
+.mitra-img-slot.filled{border-style:solid;background:var(--surf3)}
+
+/* ══ ANNOUNCEMENT ══ */
+.ann-form{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);padding:22px;margin-bottom:18px}
+.ann-targets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.target-chip{padding:6px 14px;border-radius:100px;border:1px solid var(--bdr2);background:var(--surf2);font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s}
+.target-chip.sel{background:var(--gold-p);border-color:var(--gold);color:var(--gold)}
+.ann-list{display:flex;flex-direction:column;gap:10px}
+.ann-item{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);padding:16px 18px;display:flex;align-items:flex-start;gap:12px;transition:all .2s}
+.ann-item:hover{border-color:var(--bdr2)}
+.ann-ico{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ann-ico.promo{background:rgba(201,150,42,.12)}.ann-ico.sys{background:rgba(74,144,217,.12)}.ann-ico.event{background:rgba(122,140,110,.12)}.ann-ico.urgent{background:rgba(196,87,42,.12)}
+.ann-body{flex:1}
+.ann-title{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:3px}
+.ann-preview{font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5}
+.ann-meta{display:flex;align-items:center;gap:8px}
+.ann-date{font-size:10px;color:var(--muted2)}
+.ann-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ══ CS (ADMIN) ══ */
+.cs-admin-wrap{display:grid;grid-template-columns:280px 1fr;gap:18px}
+.all-tkt-list{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);overflow:hidden}
+.atl-hdr{padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+.atl-hdr h3{font-size:13px;font-weight:700;color:var(--txt)}
+.atl-filters{padding:10px 12px;border-bottom:1px solid var(--bdr);display:flex;flex-direction:column;gap:7px}
+.atl-srch input{width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--txt);background:var(--surf2);outline:none}
+.tkt-item{padding:11px 14px;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .2s}
+.tkt-item:last-child{border-bottom:none}
+.tkt-item:hover{background:var(--surf2)}
+.tkt-item.active{background:var(--gold-p);border-left:2px solid var(--gold)}
+.ti-top{display:flex;justify-content:space-between;gap:6px;margin-bottom:3px}
+.ti-subj{font-size:11px;font-weight:600;color:var(--txt);line-height:1.3}
+.ti-time{font-size:10px;color:var(--muted);flex-shrink:0}
+.ti-user{font-size:10px;color:var(--muted);margin-bottom:5px}
+.ti-foot{display:flex;align-items:center;gap:5px}
+.undot{width:6px;height:6px;border-radius:50%;background:var(--gold);margin-left:auto}
+
+.adm-chat-panel{display:flex;flex-direction:column;background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);overflow:hidden;height:calc(100vh - var(--top) - 180px)}
+.adm-chat-hdr{padding:12px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:var(--surf2)}
+.adm-av{width:34px;height:34px;border-radius:8px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#0F0F12;flex-shrink:0}
+.adm-cu-name{font-size:12px;font-weight:700;color:var(--txt)}
+.adm-cu-info{font-size:10px;color:var(--muted)}
+.adm-tkt-meta{margin-left:auto;text-align:right}
+.adm-chat-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.adm-chat-body::-webkit-scrollbar{width:3px}
+.adm-chat-body::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:10px}
+.c-sep{text-align:center;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.c-sep::before,.c-sep::after{content:'';flex:1;height:1px;background:var(--bdr)}
+.c-sys{text-align:center;font-size:10px;color:var(--muted);padding:6px 12px;background:var(--surf2);border-radius:100px;margin:0 auto;width:fit-content}
+.msg{display:flex;gap:8px;max-width:72%}
+.msg.admin{margin-left:auto;flex-direction:row-reverse}
+.m-av{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px}
+.m-av.cu{background:var(--surf3);color:var(--txt)}.m-av.adm{background:var(--gold);color:#0F0F12}
+.m-bbl{padding:9px 13px;border-radius:10px;font-size:12px;line-height:1.6}
+.msg.customer .m-bbl{background:var(--surf2);color:var(--txt);border-radius:3px 10px 10px 10px}
+.msg.admin .m-bbl{background:var(--gold);color:#0F0F12;border-radius:10px 3px 10px 10px}
+.m-time{font-size:10px;color:var(--muted);margin-top:3px;display:block}
+.msg.admin .m-time{text-align:right}
+.adm-inp-wrap{padding:12px 16px;border-top:1px solid var(--bdr);background:var(--surf2)}
+.adm-tmpl-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.adm-tmpl{padding:4px 10px;border-radius:100px;border:1px solid var(--bdr2);background:var(--surf3);font-size:10px;color:var(--muted);cursor:pointer;transition:all .2s}
+.adm-tmpl:hover{border-color:var(--gold);color:var(--gold)}
+.adm-inp-row{display:flex;align-items:flex-end;gap:8px;background:var(--surf3);border:1px solid var(--bdr2);border-radius:10px;padding:8px 12px;transition:border-color .2s}
+.adm-inp-row:focus-within{border-color:var(--gold)}
+.adm-inp-row textarea{flex:1;border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;resize:none;max-height:70px;color:var(--txt);line-height:1.5}
+.adm-inp-row textarea::placeholder{color:var(--muted)}
+.adm-send{width:30px;height:30px;border-radius:7px;background:var(--gold);border:none;color:#0F0F12;font-size:13px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.adm-send:hover{background:var(--gold-l)}
+
+/* ══ CHAT COMMUNITY ══ */
+.comm-wrap{display:grid;grid-template-columns:240px 1fr 220px;gap:16px}
+.comm-channels{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr)}
+.ch-hdr{padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+.ch-hdr h3{font-size:12px;font-weight:700;color:var(--txt)}
+.ch-add{background:none;border:1px solid var(--bdr2);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .2s}
+.ch-add:hover{border-color:var(--gold);color:var(--gold)}
+.ch-sec{font-size:9px;font-weight:700;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;padding:10px 14px 4px}
+.ch-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;transition:background .2s;border-radius:0}
+.ch-item:hover{background:var(--surf2)}
+.ch-item.active{background:var(--gold-p);border-left:2px solid var(--gold)}
+.ch-ico{font-size:14px;width:16px;text-align:center;flex-shrink:0}
+.ch-name{font-size:12px;color:var(--muted);flex:1}
+.ch-item.active .ch-name{color:var(--gold);font-weight:600}
+.ch-cnt{font-size:9px;font-weight:700;padding:1px 5px;border-radius:100px;background:var(--terra);color:#fff}
+
+.comm-chat{display:flex;flex-direction:column;background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);overflow:hidden;height:calc(100vh - var(--top) - 110px)}
+.comm-chat-hdr{padding:12px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+.comm-ch-name{font-size:14px;font-weight:700;color:var(--txt)}
+.comm-ch-desc{font-size:11px;color:var(--muted)}
+.comm-online{margin-left:auto;font-size:10px;color:var(--sage);display:flex;align-items:center;gap:4px}
+.comm-online::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--sage)}
+.comm-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.comm-body::-webkit-scrollbar{width:3px}
+.comm-body::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:10px}
+.comm-msg{display:flex;gap:10px}
+.comm-av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px}
+.comm-content{}
+.comm-header{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.comm-name{font-size:12px;font-weight:700;color:var(--txt)}
+.comm-role-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px}
+.comm-rb-admin{background:rgba(201,150,42,.15);color:var(--gold)}
+.comm-rb-mitra{background:rgba(122,140,110,.13);color:var(--sage)}
+.comm-rb-user{background:var(--surf3);color:var(--muted)}
+.comm-time{font-size:10px;color:var(--muted2)}
+.comm-bbl{padding:10px 14px;border-radius:4px 12px 12px 12px;font-size:12px;line-height:1.6;background:var(--surf2);color:var(--txt);max-width:480px}
+.comm-bbl.pinned{border-left:2px solid var(--gold);background:rgba(201,150,42,.06)}
+.comm-reactions{display:flex;gap:4px;margin-top:5px}
+.react-btn{padding:3px 8px;border-radius:100px;background:var(--surf3);border:1px solid var(--bdr);font-size:11px;cursor:pointer;transition:all .2s;color:var(--muted)}
+.react-btn:hover{border-color:var(--gold);color:var(--gold)}
+.react-btn.active{background:var(--gold-p);border-color:var(--gold);color:var(--gold)}
+.comm-inp{padding:12px 16px;border-top:1px solid var(--bdr);background:var(--surf2)}
+.comm-inp-row{display:flex;align-items:flex-end;gap:8px;background:var(--surf3);border:1px solid var(--bdr2);border-radius:10px;padding:8px 12px;transition:border-color .2s}
+.comm-inp-row:focus-within{border-color:var(--gold)}
+.comm-inp-row textarea{flex:1;border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;resize:none;max-height:70px;color:var(--txt);line-height:1.5}
+.comm-inp-row textarea::placeholder{color:var(--muted)}
+.comm-send{width:30px;height:30px;border-radius:7px;background:var(--gold);border:none;color:#0F0F12;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.comm-send:hover{background:var(--gold-l)}
+
+.comm-members{background:var(--surf);border-radius:var(--r);border:1px solid var(--bdr);overflow:hidden}
+.mb-hdr{padding:12px 14px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:700;color:var(--txt)}
+.mb-item{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--bdr)}
+.mb-item:last-child{border-bottom:none}
+.mb-av{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.mb-name{font-size:11px;font-weight:600;color:var(--txt);margin-bottom:1px}
+.mb-role{font-size:9px;color:var(--muted)}
+.mb-online{width:6px;height:6px;border-radius:50%;margin-left:auto;flex-shrink:0}
+.mb-online.on{background:var(--sage)}.mb-online.off{background:var(--surf3)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:10px 20px;border-radius:100px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;z-index:9999;box-shadow:var(--sh2);transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .4s;opacity:0;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* RESP */
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.comm-wrap{grid-template-columns:200px 1fr}}
+@media(max-width:960px){:root{--nav:0px}.sb{transform:translateX(-250px);width:250px}.sb.open{transform:translateX(0)}.s-ov{display:block;opacity:0;pointer-events:none;transition:opacity .3s}.s-ov.open{opacity:1;pointer-events:all}.tb{left:0;padding:0 14px}.ham{display:flex}.main{margin-left:0}.page{padding:16px}.prod-form-wrap{grid-template-columns:1fr}.cs-admin-wrap{grid-template-columns:1fr}.comm-wrap{grid-template-columns:1fr}}
+@media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sb" id="sb">
+  <div class="sb-logo">
+    <div class="sb-lm">Dex<span>Home</span></div>
+    <div class="sb-role">Center Admin Panel</div>
+  </div>
+  <div class="sb-admin">
+    <div class="sb-av">SA</div>
+    <div>
+      <div class="sb-aname">Super Admin</div>
+      <div class="sb-arole">⚡ Center Administrator</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Dashboard</div>
+    <button class="ni active" onclick="go('overview',this)"><span class="ic">📊</span>Overview</button>
+    <div class="sb-sec">Manajemen Produk</div>
+    <button class="ni" onclick="go('addprod',this)"><span class="ic">➕</span>Tambah Produk</button>
+    <button class="ni" onclick="go('prodlist',this)"><span class="ic">🛍️</span>Daftar Produk</button>
+    <div class="sb-sec">Manajemen Mitra</div>
+    <button class="ni" onclick="go('mitra',this)"><span class="ic">🏬</span>Kelola Mitra</button>
+    <button class="ni" onclick="go('mitramap',this)"><span class="ic">🗺️</span>Peta Showroom</button>
+    <div class="sb-sec">Komunikasi</div>
+    <button class="ni" onclick="go('announce',this)"><span class="ic">📢</span>Pengumuman<span class="nb">3</span></button>
+    <button class="ni" onclick="go('comm',this)"><span class="ic">💬</span>Chat Community</button>
+    <button class="ni" onclick="go('csadmin',this)"><span class="ic">🎧</span>Customer Service<span class="nb">5</span></button>
+    <div class="sb-sec">Sistem</div>
+    <button class="ni" onclick="toast('Halaman laporan keuangan')"><span class="ic">💰</span>Laporan</button>
+    <button class="ni" onclick="toast('Pengaturan sistem')"><span class="ic">⚙️</span>Pengaturan</button>
+  </nav>
+  <div class="sb-bot">
+    <button class="ni" onclick="toast('Keluar dari admin panel')"><span class="ic">🚪</span>Keluar</button>
+  </div>
+</aside>
+<div class="s-ov" id="sov" onclick="closeSB()"></div>
+
+<!-- TOPBAR -->
+<header class="tb">
+  <button class="ham" onclick="openSB()">☰</button>
+  <div>
+    <div class="tb-title" id="tbtitle">Overview</div>
+    <div class="tb-breadcrumb">DexHome Admin <span>/</span> <span id="tbbread">Dashboard</span></div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-srch"><span style="color:var(--muted);font-size:13px">🔍</span><input placeholder="Cari produk, mitra..."></div>
+    <button class="tb-ibtn" onclick="toast('3 notifikasi baru')">🔔<div class="ndot"></div></button>
+    <button class="tb-ibtn" onclick="toast('Log aktivitas')">📋</button>
+    <button class="btn btn-p btn-sm" onclick="go('addprod',document.querySelectorAll('.ni')[2])">+ Produk Baru</button>
+  </div>
+</header>
+
+<main class="main">
+
+<!-- ════ OVERVIEW ════ -->
+<div class="page active" id="p-overview">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+    <div><div class="sec-lbl">Dashboard</div><div class="sec-ttl">Overview Platform</div><p style="font-size:12px;color:var(--muted)">Kamis, 19 Maret 2026 · Data real-time</p></div>
+    <div style="display:flex;gap:8px">
+      <select class="sel" style="width:auto;padding:6px 12px;font-size:11px"><option>30 Hari Terakhir</option><option>7 Hari</option><option>Bulan Ini</option><option>Tahun Ini</option></select>
+      <button class="btn btn-d btn-sm" onclick="toast('Mengunduh laporan...')">⬇ Export</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi k1"><div class="kpi-ic">💰</div><div class="kpi-lb">Total GMV</div><div class="kpi-vl">Rp 2,4<span style="font-size:13px;color:var(--muted)">M</span></div><div class="kpi-sb">↑ +18% vs bulan lalu</div></div>
+    <div class="kpi k2"><div class="kpi-ic">🛍️</div><div class="kpi-lb">Total Transaksi</div><div class="kpi-vl">1.842</div><div class="kpi-sb">↑ +142 minggu ini</div></div>
+    <div class="kpi k3"><div class="kpi-ic">👥</div><div class="kpi-lb">Customer Aktif</div><div class="kpi-vl">8.294</div><div class="kpi-sb">↑ +320 bulan ini</div></div>
+    <div class="kpi k4"><div class="kpi-ic">🏬</div><div class="kpi-lb">Mitra Showroom</div><div class="kpi-vl">180</div><div class="kpi-sb">12 kota · 6 baru bulan ini</div></div>
+    <div class="kpi k5"><div class="kpi-ic">🎫</div><div class="kpi-lb">Tiket CS Terbuka</div><div class="kpi-vl">47</div><div class="kpi-sb">Avg. respons 2.4j</div></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:18px">
+    <!-- GMV Chart -->
+    <div class="chart-wrap">
+      <div class="chart-title">GMV Harian (7 Hari)</div>
+      <div class="chart-sub">Total transaksi dalam juta rupiah</div>
+      <div class="bar-chart">
+        <div class="bar-col"><div class="bar" style="height:65%" title="Senin"></div><div class="bar-lbl">Sen</div><div class="bar-val">312</div></div>
+        <div class="bar-col"><div class="bar" style="height:80%"></div><div class="bar-lbl">Sel</div><div class="bar-val">384</div></div>
+        <div class="bar-col"><div class="bar" style="height:55%"></div><div class="bar-lbl">Rab</div><div class="bar-val">264</div></div>
+        <div class="bar-col"><div class="bar" style="height:90%"></div><div class="bar-lbl">Kam</div><div class="bar-val">432</div></div>
+        <div class="bar-col"><div class="bar" style="height:100%"></div><div class="bar-lbl">Jum</div><div class="bar-val">480</div></div>
+        <div class="bar-col"><div class="bar sage" style="height:72%"></div><div class="bar-lbl">Sab</div><div class="bar-val">346</div></div>
+        <div class="bar-col"><div class="bar sage" style="height:45%"></div><div class="bar-lbl">Min</div><div class="bar-val">216</div></div>
+      </div>
+    </div>
+    <!-- Transaksi by kategori -->
+    <div class="chart-wrap">
+      <div class="chart-title">Penjualan per Kategori</div>
+      <div class="chart-sub">Distribusi produk terlaris bulan ini</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+        <div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>🛋️ Ruang Tamu</span><span style="color:var(--gold);font-weight:700">38%</span></div><div style="height:6px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:38%;background:var(--gold);border-radius:100px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>🛏️ Kamar Tidur</span><span style="color:var(--blue);font-weight:700">24%</span></div><div style="height:6px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:24%;background:var(--blue);border-radius:100px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>🍽️ Ruang Makan</span><span style="color:var(--sage);font-weight:700">19%</span></div><div style="height:6px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:19%;background:var(--sage);border-radius:100px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>💡 Dekorasi & Lampu</span><span style="color:var(--terra);font-weight:700">12%</span></div><div style="height:6px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:12%;background:var(--terra);border-radius:100px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>🪴 Lainnya</span><span style="color:var(--purple);font-weight:700">7%</span></div><div style="height:6px;background:var(--surf3);border-radius:100px"><div style="height:100%;width:7%;background:var(--purple);border-radius:100px"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Feed -->
+  <div class="grid2">
+    <div class="card" style="padding:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div><div class="sec-lbl">Feed</div><div class="sec-ttl" style="font-size:17px">Aktivitas Terbaru</div></div>
+        <button class="btn btn-d btn-sm" onclick="toast('Lihat semua aktivitas')">Lihat Semua</button>
+      </div>
+      <div>
+        <div class="act-item"><div class="act-ic add">➕</div><div class="act-desc"><div class="act-t">Produk baru ditambahkan</div><div class="act-s">Rak Buku Modular Oak · oleh Admin Rina</div></div><div class="act-time">5 mnt lalu</div></div>
+        <div class="act-item"><div class="act-ic ann">📢</div><div class="act-desc"><div class="act-t">Pengumuman dikirim</div><div class="act-s">Flash Sale April 2026 · ke 180 mitra</div></div><div class="act-time">32 mnt lalu</div></div>
+        <div class="act-item"><div class="act-ic edit">✏️</div><div class="act-desc"><div class="act-t">Data mitra diperbarui</div><div class="act-s">Homera Studio Kemang · foto showroom</div></div><div class="act-time">1j lalu</div></div>
+        <div class="act-item"><div class="act-ic cs">🎧</div><div class="act-desc"><div class="act-t">Tiket CS diselesaikan</div><div class="act-s">#TKT-0031 · Aktivasi asuransi · Budi S.</div></div><div class="act-time">2j lalu</div></div>
+        <div class="act-item"><div class="act-ic add">🏬</div><div class="act-desc"><div class="act-t">Mitra baru bergabung</div><div class="act-s">Artisan Wood Bali · Denpasar, Bali</div></div><div class="act-time">3j lalu</div></div>
+        <div class="act-item"><div class="act-ic del">🗑️</div><div class="act-desc"><div class="act-t">Produk dinonaktifkan</div><div class="act-s">Kursi Teras Plastik · stok habis</div></div><div class="act-time">5j lalu</div></div>
+      </div>
+    </div>
+    <div class="card" style="padding:18px">
+      <div style="margin-bottom:14px"><div class="sec-lbl">Status</div><div class="sec-ttl" style="font-size:17px">Top Mitra Bulan Ini</div></div>
+      <table class="mitra-tbl">
+        <thead><tr><th>Mitra</th><th>GMV</th><th>Transaksi</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><div class="mitra-info"><div class="mitra-av">🏢</div><div><div class="mitra-name">Homera Studio</div><div class="mitra-code">MTR-0001</div></div></div></td><td style="font-weight:700;color:var(--gold)">Rp 148jt</td><td>84</td><td><span class="badge b-green">Aktif</span></td></tr>
+          <tr><td><div class="mitra-info"><div class="mitra-av">🏬</div><div><div class="mitra-name">Woodcraft Co.</div><div class="mitra-code">MTR-0002</div></div></div></td><td style="font-weight:700;color:var(--gold)">Rp 122jt</td><td>67</td><td><span class="badge b-green">Aktif</span></td></tr>
+          <tr><td><div class="mitra-info"><div class="mitra-av">🏪</div><div><div class="mitra-name">Teak & Grain</div><div class="mitra-code">MTR-0003</div></div></div></td><td style="font-weight:700;color:var(--gold)">Rp 98jt</td><td>52</td><td><span class="badge b-green">Aktif</span></td></tr>
+          <tr><td><div class="mitra-info"><div class="mitra-av">💡</div><div><div class="mitra-name">LuxeLight ID</div><div class="mitra-code">MTR-0004</div></div></div></td><td style="font-weight:700;color:var(--gold)">Rp 76jt</td><td>41</td><td><span class="badge b-green">Aktif</span></td></tr>
+          <tr><td><div class="mitra-info"><div class="mitra-av">🪞</div><div><div class="mitra-name">MirrorMade</div><div class="mitra-code">MTR-0005</div></div></div></td><td style="font-weight:700;color:var(--gold)">Rp 54jt</td><td>29</td><td><span class="badge b-gold">Review</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════ ADD PRODUCT ════ -->
+<div class="page" id="p-addprod">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+    <div><div class="sec-lbl">Produk</div><div class="sec-ttl">Tambah Produk Baru</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-d btn-sm" onclick="toast('Draft disimpan')">💾 Simpan Draft</button>
+      <button class="btn btn-p btn-sm" onclick="publishProd()">🚀 Publikasikan</button>
+    </div>
+  </div>
+  <div class="prod-form-wrap">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- Info dasar -->
+      <div class="card" style="padding:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px;display:flex;align-items:center;gap:6px">📝 Informasi Dasar</div>
+        <div class="fg"><label class="lbl">Nama Produk *</label><input class="inp" type="text" placeholder="Contoh: Sofa Modular Scandinavian 3 Dudukan" id="pname" oninput="updatePreview()"></div>
+        <div class="grid2">
+          <div class="fg"><label class="lbl">Brand / Mitra *</label><select class="sel" onchange="updatePreview()"><option>Homera Studio</option><option>Woodcraft Co.</option><option>Teak & Grain</option><option>LuxeLight ID</option><option>MirrorMade</option><option>Greenspace</option></select></div>
+          <div class="fg"><label class="lbl">Kategori *</label><select class="sel"><option>Ruang Tamu</option><option>Kamar Tidur</option><option>Ruang Makan</option><option>Dekorasi & Lampu</option><option>Outdoor</option></select></div>
+        </div>
+        <div class="fg"><label class="lbl">Deskripsi Produk *</label><textarea class="ta" placeholder="Deskripsikan produk secara lengkap: material, keunggulan, cara perawatan..." style="min-height:100px"></textarea></div>
+        <div class="grid3">
+          <div class="fg"><label class="lbl">SKU</label><input class="inp" type="text" placeholder="Otomatis jika kosong" value="HMS-SOFA-001"></div>
+          <div class="fg"><label class="lbl">Berat (kg)</label><input class="inp" type="number" placeholder="0" value="48"></div>
+          <div class="fg"><label class="lbl">Dimensi (cm)</label><input class="inp" type="text" placeholder="P×L×T" value="240×90×80"></div>
+        </div>
+      </div>
+
+      <!-- Harga -->
+      <div class="card" style="padding:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px">💰 Harga & Promo</div>
+        <div class="grid2">
+          <div class="fg"><label class="lbl">Harga Normal (Rp) *</label><input class="inp" type="text" placeholder="0" value="8.500.000" id="pprice" oninput="updatePreview()"></div>
+          <div class="fg"><label class="lbl">Harga Coret (Rp)</label><input class="inp" type="text" placeholder="Kosongkan jika tidak ada promo" value="10.000.000"></div>
+        </div>
+        <div class="grid2">
+          <div class="fg"><label class="lbl">Diskon Member (%)</label><input class="inp" type="number" placeholder="0" value="10"></div>
+          <div class="fg"><label class="lbl">Poin per Transaksi</label><input class="inp" type="number" placeholder="0" value="850"></div>
+        </div>
+        <div class="fg"><label class="lbl">Ketersediaan Cicilan</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" checked> Kredivo</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" checked> Akulaku</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox"> Home Credit</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" checked> Kartu Kredit 0%</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Foto -->
+      <div class="card" style="padding:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px">📸 Foto Produk</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Minimal 3 foto · JPG/PNG/WEBP · Maks 5MB/foto · Rasio 1:1 direkomendasikan</p>
+        <div class="img-upload-grid">
+          <div class="img-slot filled" onclick="toast('Ganti foto utama')">🛋️</div>
+          <div class="img-slot filled" onclick="toast('Ganti foto 2')">📐</div>
+          <div class="img-slot filled" onclick="toast('Ganti foto 3')">🎨</div>
+          <div class="img-slot" onclick="toast('Upload foto 4')"><div class="img-slot-ico">📷</div>Upload</div>
+          <div class="img-slot" onclick="toast('Upload foto 5')"><div class="img-slot-ico">📷</div>Upload</div>
+          <div class="img-slot" onclick="toast('Upload foto 6')"><div class="img-slot-ico">📷</div>Upload</div>
+        </div>
+      </div>
+
+      <!-- Varian & Stok -->
+      <div class="card" style="padding:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px">📦 Varian & Stok</div>
+        <div class="fg"><label class="lbl">Ukuran Tersedia</label>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:4px">
+            <span style="padding:5px 13px;border-radius:6px;background:var(--gold-p);border:1px solid var(--gold);font-size:11px;color:var(--gold);font-weight:600">2 Dudukan ✕</span>
+            <span style="padding:5px 13px;border-radius:6px;background:var(--gold-p);border:1px solid var(--gold);font-size:11px;color:var(--gold);font-weight:600">3 Dudukan ✕</span>
+            <span style="padding:5px 13px;border-radius:6px;background:var(--gold-p);border:1px solid var(--gold);font-size:11px;color:var(--gold);font-weight:600">L-Shape ✕</span>
+            <button class="btn btn-d btn-sm" onclick="toast('Tambah ukuran')">+ Tambah</button>
+          </div>
+        </div>
+        <div class="fg"><label class="lbl">Warna Tersedia</label>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:4px">
+            <div style="display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;background:var(--surf3);border:1px solid var(--bdr2);font-size:11px;color:var(--muted)"><div style="width:14px;height:14px;border-radius:50%;background:#D4BFA0;border:1px solid var(--bdr)"></div>Krem Natural ✕</div>
+            <div style="display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;background:var(--surf3);border:1px solid var(--bdr2);font-size:11px;color:var(--muted)"><div style="width:14px;height:14px;border-radius:50%;background:#6B8F71;border:1px solid var(--bdr)"></div>Sage Green ✕</div>
+            <button class="btn btn-d btn-sm" onclick="toast('Tambah warna')">+ Tambah</button>
+          </div>
+        </div>
+        <label class="lbl" style="margin-top:4px">Stok per Mitra</label>
+        <div class="stock-grid">
+          <div class="stock-item"><div class="stock-item-name">Homera Studio · Kemang</div><div class="stock-item-val">28</div><div class="stock-item-actions"><div class="qty-ctrl"><button class="qty-btn" onclick="adjStock(this,-1)">−</button><input class="qty-num" value="28" readonly><button class="qty-btn" onclick="adjStock(this,1)">+</button></div></div></div>
+          <div class="stock-item"><div class="stock-item-name">Woodcraft · Cipete</div><div class="stock-item-val">14</div><div class="stock-item-actions"><div class="qty-ctrl"><button class="qty-btn" onclick="adjStock(this,-1)">−</button><input class="qty-num" value="14" readonly><button class="qty-btn" onclick="adjStock(this,1)">+</button></div></div></div>
+          <div class="stock-item"><div class="stock-item-name">Teak & Grain · Blok M</div><div class="stock-item-val">7</div><div class="stock-item-actions"><div class="qty-ctrl"><button class="qty-btn" onclick="adjStock(this,-1)">−</button><input class="qty-num" value="7" readonly><button class="qty-btn" onclick="adjStock(this,1)">+</button></div></div></div>
+          <div class="stock-item"><div class="stock-item-name">LuxeLight · Senopati</div><div class="stock-item-val">0</div><div style="margin-top:6px"><span class="badge b-red">Stok Habis</span></div></div>
+        </div>
+      </div>
+
+      <!-- Garansi -->
+      <div class="card" style="padding:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px">🛡️ Garansi & Asuransi</div>
+        <div class="grid2">
+          <div class="fg"><label class="lbl">Garansi (bulan)</label><select class="sel"><option>12 bulan</option><option>24 bulan</option><option>36 bulan</option><option>60 bulan</option></select></div>
+          <div class="fg"><label class="lbl">Jenis Garansi</label><select class="sel"><option>Garansi Toko</option><option>Garansi Resmi Pabrik</option><option>Garansi DexHome</option></select></div>
+        </div>
+        <div class="fg"><label class="lbl">Tersedia Asuransi</label><div style="display:flex;gap:10px;margin-top:4px"><label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="radio" name="ins" checked> Ya, tersedia</label><label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="radio" name="ins"> Tidak</label></div></div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="prod-preview">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">Preview Produk</div>
+      <div class="prev-img">🛋️</div>
+      <div class="prev-brand" id="prev-brand">Homera Studio</div>
+      <div class="prev-name" id="prev-name">Nama produk akan tampil di sini</div>
+      <div class="prev-price" id="prev-price">Rp 8.500.000</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <span class="prev-tag" style="background:rgba(201,150,42,.12);color:var(--gold)">⭐ 0.0 (0 ulasan)</span>
+        <span class="prev-tag" style="background:rgba(122,140,110,.12);color:var(--sage)">✓ Garansi 24 Bln</span>
+      </div>
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Cicilan mulai:</div>
+      <div style="font-size:13px;font-weight:700;color:var(--txt)">Rp 472.000/bulan</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:14px">(18 bulan, 0% bunga)</div>
+      <button class="btn btn-p" style="width:100%;justify-content:center" onclick="toast('Preview mode — tidak bisa diklik')">🛒 Tambah ke Keranjang</button>
+      <button class="btn btn-d" style="width:100%;justify-content:center;margin-top:8px" onclick="toast('Preview mode')">💬 Chat Seller</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PRODUCT LIST ════ -->
+<div class="page" id="p-prodlist">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+    <div><div class="sec-lbl">Produk</div><div class="sec-ttl">Daftar Semua Produk</div></div>
+    <button class="btn btn-p btn-sm" onclick="go('addprod',document.querySelectorAll('.ni')[2])">+ Tambah Produk</button>
+  </div>
+  <div class="card" style="overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">
+      <input class="inp" style="max-width:260px;padding:7px 12px" placeholder="Cari produk...">
+      <select class="sel" style="width:auto;padding:7px 12px;font-size:11px"><option>Semua Kategori</option><option>Ruang Tamu</option><option>Kamar Tidur</option><option>Ruang Makan</option><option>Dekorasi</option></select>
+      <select class="sel" style="width:auto;padding:7px 12px;font-size:11px"><option>Semua Status</option><option>Aktif</option><option>Draft</option><option>Nonaktif</option></select>
+      <button class="btn btn-d btn-sm" onclick="toast('Filter diterapkan')">Filter</button>
+    </div>
+    <table class="mitra-tbl">
+      <thead><tr><th>Produk</th><th>Kategori</th><th>Harga</th><th>Stok Total</th><th>Terjual</th><th>Rating</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody>
+        <tr><td><div class="mitra-info"><div class="mitra-av">🛋️</div><div><div class="mitra-name">Sofa Modular Scandinavian</div><div class="mitra-code">HMS-SOFA-001 · Homera Studio</div></div></div></td><td><span class="badge b-gold">Ruang Tamu</span></td><td style="font-weight:700;color:var(--gold)">Rp 8.500.000</td><td>49</td><td>2.140</td><td style="color:var(--gold)">★ 4.9</td><td><span class="badge b-green">Aktif</span></td><td><div class="act-btns"><button class="btn btn-d btn-sm" onclick="toast('Edit produk')">✏️</button><button class="btn btn-r btn-sm" onclick="toast('Nonaktifkan produk')">🔒</button></div></td></tr>
+        <tr><td><div class="mitra-info"><div class="mitra-av">🛏️</div><div><div class="mitra-name">Ranjang Kayu Oak Premium</div><div class="mitra-code">WCC-BED-001 · Woodcraft Co.</div></div></div></td><td><span class="badge b-blue">Kamar Tidur</span></td><td style="font-weight:700;color:var(--gold)">Rp 12.200.000</td><td>22</td><td>980</td><td style="color:var(--gold)">★ 4.8</td><td><span class="badge b-green">Aktif</span></td><td><div class="act-btns"><button class="btn btn-d btn-sm" onclick="toast('Edit produk')">✏️</button><button class="btn btn-r btn-sm" onclick="toast('Nonaktifkan produk')">🔒</button></div></td></tr>
+        <tr><td><div class="mitra-info"><div class="mitra-av">🍽️</div><div><div class="mitra-name">Meja Makan Kayu Jati 6 Kursi</div><div class="mitra-code">TGR-TABLE-002 · Teak & Grain</div></div></div></td><td><span class="badge b-purple">Ruang Makan</span></td><td style="font-weight:700;color:var(--gold)">Rp 5.800.000</td><td>31</td><td>640</td><td style="color:var(--gold)">★ 4.7</td><td><span class="badge b-gold">Promo</span></td><td><div class="act-btns"><button class="btn btn-d btn-sm" onclick="toast('Edit produk')">✏️</button><button class="btn btn-r btn-sm" onclick="toast('Nonaktifkan produk')">🔒</button></div></td></tr>
+        <tr><td><div class="mitra-info"><div class="mitra-av">💡</div><div><div class="mitra-name">Lampu Gantung Rattan Artisan</div><div class="mitra-code">LLI-LAMP-003 · LuxeLight ID</div></div></div></td><td><span class="badge b-red">Dekorasi</span></td><td style="font-weight:700;color:var(--gold)">Rp 1.250.000</td><td>88</td><td>412</td><td style="color:var(--gold)">★ 4.8</td><td><span class="badge b-green">Aktif</span></td><td><div class="act-btns"><button class="btn btn-d btn-sm" onclick="toast('Edit produk')">✏️</button><button class="btn btn-r btn-sm" onclick="toast('Nonaktifkan produk')">🔒</button></div></td></tr>
+        <tr><td><div class="mitra-info"><div class="mitra-av">🪞</div><div><div class="mitra-name">Cermin Dinding Arch Minimalis</div><div class="mitra-code">MMD-MIRR-001 · MirrorMade</div></div></div></td><td><span class="badge b-red">Dekorasi</span></td><td style="font-weight:700;color:var(--gold)">Rp 2.100.000</td><td>17</td><td>530</td><td style="color:var(--gold)">★ 4.7</td><td><span class="badge b-grey">Draft</span></td><td><div class="act-btns"><button class="btn btn-g btn-sm" onclick="toast('Aktifkan produk')">✅</button><button class="btn btn-d btn-sm" onclick="toast('Edit produk')">✏️</button></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ KELOLA MITRA ════ -->
+<div class="page" id="p-mitra">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+    <div><div class="sec-lbl">Mitra</div><div class="sec-ttl">Kelola Showroom Mitra</div></div>
+    <button class="btn btn-p btn-sm" onclick="toast('Form pendaftaran mitra baru')">+ Tambah Mitra</button>
+  </div>
+  <div class="grid2">
+    <div class="card" style="overflow:hidden">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px">
+        <input class="inp" style="flex:1;padding:7px 12px" placeholder="Cari mitra...">
+        <select class="sel" style="width:auto;padding:7px 12px;font-size:11px"><option>Semua Kota</option><option>Jakarta</option><option>Bandung</option><option>Surabaya</option></select>
+      </div>
+      <table class="mitra-tbl">
+        <thead><tr><th>Mitra</th><th>Kota</th><th>Produk</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody>
+          <tr onclick="openEditMitra('Homera Studio Kemang','Kemang, Jakarta Selatan','🏢')" style="cursor:pointer"><td><div class="mitra-info"><div class="mitra-av">🏢</div><div><div class="mitra-name">Homera Studio Kemang</div><div class="mitra-code">MTR-0001</div></div></div></td><td style="font-size:11px;color:var(--muted)">Jakarta Selatan</td><td>18</td><td><span class="badge b-green">Aktif</span></td><td><div class="act-btns"><button class="btn btn-d btn-sm" onclick="event.stopPropagation();toast('Edit mitra')">✏️</button></div></td></tr>
+          <tr onclick="openEditMitra('Woodcraft Co. Cipete','Cipete, Jakarta Selatan','🏬')" style="cursor:pointer"><td><div class="mitra-info"><div class="mitra-av">🏬</div><div><div class="mitra-name">Woodcraft Co. Cipete</div><div class="mitra-code">MTR-0002</div></div></div></td><td style="font-size:11px;color:var(--muted)">Jakarta Selatan</td><td>14</td><td><span class="badge b-green">Aktif</span></td><td><div class="act-btns"><button class="btn btn-d btn-sm" onclick="event.stopPropagation();toast('Edit mitra')">✏️</button></div></td></tr>
+          <tr onclick="openEditMitra('Teak & Grain Blok M','Blok M, Jakarta Selatan','🏪')" style="cursor:pointer"><td><div class="mitra-info"><div class="mitra-av">🏪</div><div><div class="mitra-name">Teak & Grain Blok M</div><div class="mitra-code">MTR-0003</div></div></div></td><td style="font-size:11px;color:var(--muted)">Jakarta Selatan</td><td>11</td><td><span class="badge b-green">Aktif</span></td><td><div class="act-btns"><button class="btn btn-d btn-sm" onclick="event.stopPropagation();toast('Edit mitra')">✏️</button></div></td></tr>
+          <tr onclick="openEditMitra('LuxeLight Senopati','Senopati, Jakarta Selatan','💡')" style="cursor:pointer"><td><div class="mitra-info"><div class="mitra-av">💡</div><div><div class="mitra-name">LuxeLight Senopati</div><div class="mitra-code">MTR-0004</div></div></div></td><td style="font-size:11px;color:var(--muted)">Jakarta Selatan</td><td>22</td><td><span class="badge b-gold">Review</span></td><td><div class="act-btns"><button class="btn btn-g btn-sm" onclick="event.stopPropagation();toast('Aktifkan mitra')">✅</button></div></td></tr>
+          <tr onclick="openEditMitra('Artisan Wood Bali','Denpasar, Bali','🏛️')" style="cursor:pointer"><td><div class="mitra-info"><div class="mitra-av">🏛️</div><div><div class="mitra-name">Artisan Wood Bali</div><div class="mitra-code">MTR-0026</div></div></div></td><td style="font-size:11px;color:var(--muted)">Denpasar, Bali</td><td>0</td><td><span class="badge b-grey">Baru</span></td><td><div class="act-btns"><button class="btn btn-g btn-sm" onclick="event.stopPropagation();toast('Aktifkan mitra')">✅</button></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Edit Panel -->
+    <div class="edit-panel" id="editPanel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div><div class="sec-lbl">Edit</div><div class="sec-ttl" style="font-size:18px" id="editName">Pilih Mitra</div></div>
+        <button class="btn btn-p btn-sm" onclick="toast('Perubahan disimpan!')">💾 Simpan</button>
+      </div>
+      <div class="fg"><label class="lbl">Nama Showroom</label><input class="inp" id="editNameInp" type="text" value="Homera Studio Kemang"></div>
+      <div class="fg"><label class="lbl">Kode Mitra</label><input class="inp" type="text" value="MTR-0001" readonly style="opacity:.5"></div>
+      <div class="fg"><label class="lbl">Alamat Lengkap</label><input class="inp" type="text" value="Jl. Kemang Raya No. 45, Jakarta Selatan 12730"></div>
+      <div class="fg"><label class="lbl">Lokasi di Peta</label>
+        <div class="map-mini" onclick="toast('Klik untuk memindahkan pin lokasi')">
+          <div class="map-mini-pin" id="editPin">🏢</div>
+        </div>
+        <div class="grid2">
+          <input class="inp" style="font-size:11px" type="text" placeholder="Latitude" value="-6.2609">
+          <input class="inp" style="font-size:11px" type="text" placeholder="Longitude" value="106.8156">
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Foto Showroom</label>
+        <div class="mitra-img-slots">
+          <div class="mitra-img-slot filled" onclick="toast('Ganti foto utama')">🏢</div>
+          <div class="mitra-img-slot filled" onclick="toast('Ganti foto interior')">🛋️</div>
+          <div class="mitra-img-slot" onclick="toast('Upload foto 3')">📷</div>
+          <div class="mitra-img-slot" onclick="toast('Upload foto 4')">📷</div>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Deskripsi Showroom</label><textarea class="ta" style="min-height:70px">Showroom furnitur premium di kawasan Kemang, Jakarta Selatan. Spesialis sofa dan kursi gaya Scandinavian.</textarea></div>
+      <div class="grid2">
+        <div class="fg"><label class="lbl">Jam Buka</label><input class="inp" type="text" value="10.00 – 21.00 WIB"></div>
+        <div class="fg"><label class="lbl">Telepon</label><input class="inp" type="text" value="+62 21 7179 4444"></div>
+      </div>
+      <div class="fg"><label class="lbl">Status</label><select class="sel"><option>Aktif</option><option>Review</option><option>Nonaktif</option></select></div>
+    </div>
+
+    <!-- Placeholder if no mitra selected -->
+    <div class="card" id="editPlaceholder" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:40px;text-align:center">
+      <div style="font-size:48px;opacity:.3">🏬</div>
+      <div style="font-size:13px;color:var(--muted)">Klik baris mitra untuk mengedit data, lokasi, dan foto showroom</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PENGUMUMAN ════ -->
+<div class="page" id="p-announce">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+    <div><div class="sec-lbl">Komunikasi</div><div class="sec-ttl">Kelola Pengumuman</div></div>
+  </div>
+  <div class="grid2" style="margin-bottom:20px">
+    <div class="ann-form">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px">📢 Buat Pengumuman Baru</div>
+      <div class="fg"><label class="lbl">Judul Pengumuman</label><input class="inp" type="text" placeholder="Contoh: Flash Sale Akhir Bulan April 2026"></div>
+      <div class="fg"><label class="lbl">Isi Pesan</label><textarea class="ta" placeholder="Tulis isi pengumuman lengkap di sini..."></textarea></div>
+      <div class="fg"><label class="lbl">Tujukan ke</label>
+        <div class="ann-targets">
+          <div class="target-chip sel" onclick="togTarget(this)">👥 Semua Customer</div>
+          <div class="target-chip" onclick="togTarget(this)">🏬 Semua Mitra</div>
+          <div class="target-chip" onclick="togTarget(this)">👑 Member Gold+</div>
+          <div class="target-chip" onclick="togTarget(this)">💎 Platinum</div>
+          <div class="target-chip" onclick="togTarget(this)">🆓 Free Member</div>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Kategori</label>
+        <select class="sel"><option>📣 Promosi / Diskon</option><option>⚙️ Sistem / Update</option><option>🎪 Event</option><option>🚨 Mendesak</option><option>ℹ️ Informasi Umum</option></select>
+      </div>
+      <div class="grid2">
+        <div class="fg"><label class="lbl">Jadwal Kirim</label><input class="inp" type="datetime-local" value="2026-03-20T10:00"></div>
+        <div class="fg"><label class="lbl">Kedaluwarsa</label><input class="inp" type="datetime-local" value="2026-04-01T23:59"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-p" style="flex:1" onclick="sendAnn()">📨 Kirim Sekarang</button>
+        <button class="btn btn-d" onclick="toast('Dijadwalkan untuk dikirim')">⏰ Jadwalkan</button>
+      </div>
+    </div>
+    <div class="card" style="padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px">📊 Statistik Pengumuman</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:16px">Performa bulan ini</p>
+      <div class="grid2" style="gap:10px">
+        <div style="background:var(--surf2);border-radius:8px;padding:14px;text-align:center;border:1px solid var(--bdr)"><div style="font-size:20px;margin-bottom:4px">📢</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--txt)">24</div><div style="font-size:10px;color:var(--muted)">Total Dikirim</div></div>
+        <div style="background:var(--surf2);border-radius:8px;padding:14px;text-align:center;border:1px solid var(--bdr)"><div style="font-size:20px;margin-bottom:4px">👁️</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold)">84%</div><div style="font-size:10px;color:var(--muted)">Rata-rata Dibaca</div></div>
+        <div style="background:var(--surf2);border-radius:8px;padding:14px;text-align:center;border:1px solid var(--bdr)"><div style="font-size:20px;margin-bottom:4px">👆</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--sage)">31%</div><div style="font-size:10px;color:var(--muted)">Click-through Rate</div></div>
+        <div style="background:var(--surf2);border-radius:8px;padding:14px;text-align:center;border:1px solid var(--bdr)"><div style="font-size:20px;margin-bottom:4px">👥</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--blue)">8.294</div><div style="font-size:10px;color:var(--muted)">Total Penerima</div></div>
+      </div>
+    </div>
+  </div>
+  <div><div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:12px">📋 Riwayat Pengumuman</div>
+    <div class="ann-list">
+      <div class="ann-item"><div class="ann-ico promo">📣</div><div class="ann-body"><div class="ann-title">Flash Sale April 2026 — Diskon Hingga 40%</div><div class="ann-preview">Rayakan bulan April dengan penawaran spesial dari seluruh showroom mitra DexHome. Berlaku 1–15 April 2026...</div><div class="ann-meta"><span class="badge b-gold">📣 Promosi</span><span class="badge b-grey">👥 Customer + Mitra</span><div class="ann-date">Dikirim: 18 Mar 2026 · Dibaca 87% (7.215 orang)</div></div></div><div class="ann-actions"><button class="btn btn-d btn-sm" onclick="toast('Edit pengumuman')">✏️</button><button class="btn btn-r btn-sm" onclick="toast('Hapus pengumuman')">🗑️</button></div></div>
+      <div class="ann-item"><div class="ann-ico sys">⚙️</div><div class="ann-body"><div class="ann-title">Update Sistem DexHome v2.4 — Fitur Baru Tersedia</div><div class="ann-preview">Versi terbaru DexHome kini hadir dengan tampilan katalog yang diperbarui, fitur chat yang lebih cepat...</div><div class="ann-meta"><span class="badge b-blue">⚙️ Sistem</span><span class="badge b-grey">👥 Semua Pengguna</span><div class="ann-date">Dikirim: 15 Mar 2026 · Dibaca 91% (8.100 orang)</div></div></div><div class="ann-actions"><button class="btn btn-d btn-sm" onclick="toast('Edit pengumuman')">✏️</button><button class="btn btn-r btn-sm" onclick="toast('Hapus pengumuman')">🗑️</button></div></div>
+      <div class="ann-item"><div class="ann-ico event">🎪</div><div class="ann-body"><div class="ann-title">DexHome Expo 2026 — Jakarta Convention Center</div><div class="ann-preview">Bergabunglah di pameran furnitur terbesar tahun ini! Temui langsung ratusan mitra, coba produk, dan dapatkan...</div><div class="ann-meta"><span class="badge b-green">🎪 Event</span><span class="badge b-gold">👑 Gold Member</span><div class="ann-date">Dikirim: 10 Mar 2026 · Dibaca 76% (3.842 orang)</div></div></div><div class="ann-actions"><button class="btn btn-d btn-sm" onclick="toast('Edit pengumuman')">✏️</button><button class="btn btn-r btn-sm" onclick="toast('Hapus pengumuman')">🗑️</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ CS ADMIN ════ -->
+<div class="page" id="p-csadmin">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px">
+    <div><div class="sec-lbl">Support</div><div class="sec-ttl">Customer Service Admin</div></div>
+    <div style="display:flex;gap:8px">
+      <select class="sel" style="width:auto;padding:6px 12px;font-size:11px"><option>Semua Tiket</option><option>Belum Ditangani</option><option>Sedang Proses</option><option>Selesai</option></select>
+      <button class="btn btn-d btn-sm" onclick="toast('Export laporan CS')">⬇ Export</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
+    <div class="card" style="padding:14px;text-align:center"><div style="font-size:20px;margin-bottom:6px">🔴</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--terra)">12</div><div style="font-size:11px;color:var(--muted)">Belum Ditangani</div></div>
+    <div class="card" style="padding:14px;text-align:center"><div style="font-size:20px;margin-bottom:6px">🟡</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold)">23</div><div style="font-size:11px;color:var(--muted)">Sedang Proses</div></div>
+    <div class="card" style="padding:14px;text-align:center"><div style="font-size:20px;margin-bottom:6px">🟢</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--sage)">142</div><div style="font-size:11px;color:var(--muted)">Selesai Bulan Ini</div></div>
+    <div class="card" style="padding:14px;text-align:center"><div style="font-size:20px;margin-bottom:6px">⭐</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--txt)">4.8</div><div style="font-size:11px;color:var(--muted)">Skor Kepuasan</div></div>
+  </div>
+  <div class="cs-admin-wrap">
+    <div class="all-tkt-list">
+      <div class="atl-hdr"><h3>Semua Tiket</h3><span class="badge b-red">47 aktif</span></div>
+      <div class="atl-filters">
+        <div class="atl-srch"><input placeholder="Cari tiket atau customer..."></div>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-p btn-sm">Semua</button>
+          <button class="btn btn-d btn-sm" onclick="toast('Filter: Garansi')">🔧</button>
+          <button class="btn btn-d btn-sm" onclick="toast('Filter: Pengiriman')">🚚</button>
+          <button class="btn btn-d btn-sm" onclick="toast('Filter: Komplain')">↩</button>
+        </div>
+      </div>
+      <div class="tkt-item active" onclick="selATkt(this)"><div class="ti-top"><div class="ti-subj">Klaim Garansi – Sofa Scandinavian</div><div class="ti-time">12:30</div></div><div class="ti-user">👤 Budi Santoso · Gold Member</div><div class="ti-foot"><span class="badge b-gold" style="font-size:9px">🔧 Garansi</span><span style="font-size:9px;font-family:monospace;color:var(--muted)">#TKT-0041</span><div class="undot"></div></div></div>
+      <div class="tkt-item" onclick="selATkt(this)"><div class="ti-top"><div class="ti-subj">Update Status Pengiriman</div><div class="ti-time">Kemarin</div></div><div class="ti-user">👤 Dewi Kusuma · Silver Member</div><div class="ti-foot"><span class="badge b-blue" style="font-size:9px">🚚 Pengiriman</span><span style="font-size:9px;font-family:monospace;color:var(--muted)">#TKT-0040</span><div class="undot"></div></div></div>
+      <div class="tkt-item" onclick="selATkt(this)"><div class="ti-top"><div class="ti-subj">Produk Berbeda dari Foto</div><div class="ti-time">3 hr lalu</div></div><div class="ti-user">👤 Ahmad Rasyid · Silver Member</div><div class="ti-foot"><span class="badge b-red" style="font-size:9px">↩ Komplain</span><span style="font-size:9px;font-family:monospace;color:var(--muted)">#TKT-0038</span></div></div>
+      <div class="tkt-item" onclick="selATkt(this)"><div class="ti-top"><div class="ti-subj">Klaim Asuransi Meja Makan</div><div class="ti-time">4 hr lalu</div></div><div class="ti-user">👤 Nadia Putri · Platinum Member</div><div class="ti-foot"><span class="badge b-purple" style="font-size:9px">🛡️ Asuransi</span><span style="font-size:9px;font-family:monospace;color:var(--muted)">#TKT-0037</span></div></div>
+      <div class="tkt-item" onclick="selATkt(this)"><div class="ti-top"><div class="ti-subj">Poin Belum Masuk</div><div class="ti-time">5 hr lalu</div></div><div class="ti-user">👤 Rizky Santoso · Gold Member</div><div class="ti-foot"><span class="badge b-gold" style="font-size:9px">⭐ Poin</span><span style="font-size:9px;font-family:monospace;color:var(--muted)">#TKT-0036</span></div></div>
+    </div>
+    <div class="adm-chat-panel">
+      <div class="adm-chat-hdr">
+        <div class="adm-av">BS</div>
+        <div><div class="adm-cu-name">Budi Santoso</div><div class="adm-cu-info">Gold Member · budi.s@email.com · +62 812 3456 7890</div></div>
+        <div class="adm-tkt-meta"><div style="font-size:10px;color:var(--muted);font-family:monospace">#TKT-0041</div><span class="badge b-gold" style="font-size:9px">🔧 Klaim Garansi</span></div>
+        <div style="margin-left:12px;display:flex;gap:6px">
+          <select class="sel" style="width:auto;padding:4px 8px;font-size:10px"><option>Sedang Diproses</option><option>Selesai</option><option>Eskalasi</option></select>
+          <button class="btn btn-d btn-sm" onclick="toast('Tiket ditandai selesai')">✅</button>
+        </div>
+      </div>
+      <div class="adm-chat-body" id="admChatBody">
+        <div class="c-sep">17 Mar 2026</div>
+        <div class="c-sys">Tiket dibuat oleh customer · #TKT-0041</div>
+        <div class="msg customer"><div class="m-av cu">BS</div><div><div class="m-bbl">Halo, sofa saya sudah 6 bulan tapi busa bagian tengah mulai kempes dan tidak kembali ke bentuk semula.</div><span class="m-time">09.23</span></div></div>
+        <div class="msg admin"><div class="m-av adm">A</div><div><div class="m-bbl">Terima kasih Budi. Untuk klaim ini kami butuh foto kondisi sofa, video dari atas, dan nomor order. Bisa kirimkan?</div><span class="m-time">09.26 · Terkirim</span></div></div>
+        <div class="msg customer"><div class="m-av cu">BS</div><div><div class="m-bbl">Ini fotonya kak.<br><div style="margin-top:5px;padding:6px 10px;background:var(--surf3);border-radius:7px;font-size:11px">📸 sofa_kondisi.jpg · 2.4MB</div></div><span class="m-time">09.41</span></div></div>
+        <div class="msg admin"><div class="m-av adm">A</div><div><div class="m-bbl">Sudah diterima. Kondisi ini masuk cakupan garansi kami. Tim teknis akan dijadwalkan kunjungan ke rumah Anda. 🛠️</div><span class="m-time">10.02 · Terkirim</span></div></div>
+        <div class="c-sep">18 Mar 2026</div>
+        <div class="c-sys">Status diperbarui → Tim Teknis Ditugaskan</div>
+        <div class="msg admin"><div class="m-av adm">A</div><div><div class="m-bbl">Update: teknisi dijadwalkan Jumat 20 Maret 2026, 10.00–13.00 WIB. Apakah sesuai?</div><span class="m-time">09.00 · Terkirim</span></div></div>
+        <div class="msg customer"><div class="m-av cu">BS</div><div><div class="m-bbl">Oke. Tidak ada biaya tambahan kan karena masih garansi?</div><span class="m-time">09.18</span></div></div>
+      </div>
+      <div class="adm-inp-wrap">
+        <div class="adm-tmpl-row">
+          <button class="adm-tmpl" onclick="sendAdm('Terima kasih, kami sedang memproses permintaan Anda.')">Template: Diproses</button>
+          <button class="adm-tmpl" onclick="sendAdm('Tim teknisi kami akan menghubungi Anda dalam 1×24 jam.')">Template: Tim Teknis</button>
+          <button class="adm-tmpl" onclick="sendAdm('Klaim garansi Anda telah disetujui. Proses perbaikan gratis!')">Template: Klaim OK</button>
+          <button class="adm-tmpl" onclick="sendAdm('Mohon maaf atas ketidaknyamanannya. Kami prioritaskan tiket ini.')">Template: Maaf</button>
+        </div>
+        <div class="adm-inp-row">
+          <textarea id="admInp" placeholder="Balas pesan customer..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdmInp()}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+          <button class="adm-send" onclick="sendAdmInp()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ CHAT COMMUNITY ════ -->
+<div class="page" id="p-comm">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px">
+    <div><div class="sec-lbl">Community</div><div class="sec-ttl">Chat Community</div></div>
+    <button class="btn btn-d btn-sm" onclick="toast('Buat channel baru')">+ Channel Baru</button>
+  </div>
+  <div class="comm-wrap">
+    <!-- Channels -->
+    <div class="comm-channels">
+      <div class="ch-hdr"><h3>Channels</h3><button class="ch-add" onclick="toast('Buat channel baru')">+ Baru</button></div>
+      <div class="ch-sec">Umum</div>
+      <div class="ch-item active" onclick="selCh(this,'#umum','Diskusi umum platform DexHome')"><div class="ch-ico">#</div><div class="ch-name">umum</div><div class="ch-cnt">3</div></div>
+      <div class="ch-item" onclick="selCh(this,'#pengumuman','Pengumuman resmi dari Center Admin')"><div class="ch-ico">📢</div><div class="ch-name">pengumuman</div></div>
+      <div class="ch-item" onclick="selCh(this,'#tips-desain','Tips dan inspirasi desain interior')"><div class="ch-ico">#</div><div class="ch-name">tips-desain</div><div class="ch-cnt">1</div></div>
+      <div class="ch-sec">Mitra</div>
+      <div class="ch-item" onclick="selCh(this,'#mitra-forum','Forum diskusi khusus mitra showroom')"><div class="ch-ico">🏬</div><div class="ch-name">mitra-forum</div><div class="ch-cnt">8</div></div>
+      <div class="ch-item" onclick="selCh(this,'#stok-update','Update stok dan ketersediaan produk')"><div class="ch-ico">#</div><div class="ch-name">stok-update</div></div>
+      <div class="ch-item" onclick="selCh(this,'#promo-mitra','Promo eksklusif dari mitra')"><div class="ch-ico">#</div><div class="ch-name">promo-mitra</div></div>
+      <div class="ch-sec">Admin</div>
+      <div class="ch-item" onclick="selCh(this,'#admin-internal','Channel internal tim admin DexHome')"><div class="ch-ico">🔒</div><div class="ch-name">admin-internal</div></div>
+    </div>
+
+    <!-- Chat -->
+    <div class="comm-chat">
+      <div class="comm-chat-hdr">
+        <div><div class="comm-ch-name" id="commChName"># umum</div><div class="comm-ch-desc" id="commChDesc">Diskusi umum platform DexHome · 180 anggota</div></div>
+        <div class="comm-online">32 online</div>
+        <button class="btn btn-d btn-sm" style="margin-left:12px" onclick="toast('Pengaturan channel')">⚙️</button>
+      </div>
+      <div class="comm-body" id="commBody">
+        <div class="c-sep">Kamis, 19 Mar 2026</div>
+        <div class="comm-msg">
+          <div class="comm-av" style="background:var(--gold);color:#0F0F12">CA</div>
+          <div class="comm-content">
+            <div class="comm-header"><div class="comm-name">Center Admin</div><span class="comm-role-badge comm-rb-admin">Admin</span><div class="comm-time">08.00</div></div>
+            <div class="comm-bbl pinned">📢 Selamat pagi semua! Pengumuman: Flash Sale April 2026 sudah dikirim ke semua customer. Mohon pastikan stok produk Anda sudah up-to-date sebelum 25 Maret ya, mitra! 🙏</div>
+            <div class="comm-reactions"><button class="react-btn active" onclick="this.textContent=this.textContent.includes('12')?'👍 11':'👍 12'">👍 12</button><button class="react-btn" onclick="togReact(this)">🙏 8</button><button class="react-btn" onclick="togReact(this)">🔥 5</button></div>
+          </div>
+        </div>
+        <div class="comm-msg">
+          <div class="comm-av" style="background:var(--sage);color:#fff">HS</div>
+          <div class="comm-content">
+            <div class="comm-header"><div class="comm-name">Homera Studio</div><span class="comm-role-badge comm-rb-mitra">Mitra</span><div class="comm-time">08.14</div></div>
+            <div class="comm-bbl">Siap Admin! Stok sofa kami sudah dicek, total 28 unit tersedia. Ada pertanyaan soal metode pengiriman untuk order di atas 500km — apakah perlu koordinasi langsung dengan tim logistik?</div>
+            <div class="comm-reactions"><button class="react-btn" onclick="togReact(this)">👍 4</button><button class="react-btn" onclick="togReact(this)">❓ 2</button></div>
+          </div>
+        </div>
+        <div class="comm-msg">
+          <div class="comm-av" style="background:var(--terra);color:#fff">WC</div>
+          <div class="comm-content">
+            <div class="comm-header"><div class="comm-name">Woodcraft Co.</div><span class="comm-role-badge comm-rb-mitra">Mitra</span><div class="comm-time">08.22</div></div>
+            <div class="comm-bbl">Pertanyaan yang bagus dari Homera! Saya juga mau tanya hal yang sama. Dan bagaimana dengan pengiriman untuk item besar seperti ranjang king size?</div>
+            <div class="comm-reactions"><button class="react-btn" onclick="togReact(this)">👍 3</button></div>
+          </div>
+        </div>
+        <div class="comm-msg">
+          <div class="comm-av" style="background:var(--gold);color:#0F0F12">CA</div>
+          <div class="comm-content">
+            <div class="comm-header"><div class="comm-name">Center Admin</div><span class="comm-role-badge comm-rb-admin">Admin</span><div class="comm-time">08.35</div></div>
+            <div class="comm-bbl">Pertanyaan bagus! Untuk pengiriman > 500km, gunakan form koordinasi logistik di admin panel mitra masing-masing. Tim logistik kami akan follow up dalam 2 jam. Untuk item besar, ada SOP khusus di #stok-update 👆</div>
+            <div class="comm-reactions"><button class="react-btn" onclick="togReact(this)">👍 8</button><button class="react-btn" onclick="togReact(this)">🙏 6</button><button class="react-btn" onclick="togReact(this)">✅ 4</button></div>
+          </div>
+        </div>
+        <div class="comm-msg">
+          <div class="comm-av" style="background:var(--blue);color:#fff">BS</div>
+          <div class="comm-content">
+            <div class="comm-header"><div class="comm-name">Budi Santoso</div><span class="comm-role-badge comm-rb-user">Customer</span><div class="comm-time">09.12</div></div>
+            <div class="comm-bbl">Halo! Sebagai customer gold, apakah flash sale April ini ada diskon tambahan untuk member? Terima kasih 😊</div>
+            <div class="comm-reactions"><button class="react-btn" onclick="togReact(this)">👍 2</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="comm-inp">
+        <div class="comm-inp-row">
+          <textarea id="commInp" placeholder="Kirim pesan ke #umum..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendComm()}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+          <button style="background:none;border:none;font-size:17px;cursor:pointer;color:var(--muted)" onclick="toast('Tambah emoji')">😊</button>
+          <button style="background:none;border:none;font-size:17px;cursor:pointer;color:var(--muted)" onclick="toast('Lampirkan file')">📎</button>
+          <button class="comm-send" onclick="sendComm()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Members -->
+    <div class="comm-members">
+      <div class="mb-hdr">Anggota Online (32)</div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--gold);color:#0F0F12">CA</div><div><div class="mb-name">Center Admin</div><div class="mb-role">Administrator</div></div><div class="mb-online on"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--sage);color:#fff">HS</div><div><div class="mb-name">Homera Studio</div><div class="mb-role">Mitra</div></div><div class="mb-online on"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--terra);color:#fff">WC</div><div><div class="mb-name">Woodcraft Co.</div><div class="mb-role">Mitra</div></div><div class="mb-online on"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--blue);color:#fff">BS</div><div><div class="mb-name">Budi Santoso</div><div class="mb-role">Customer · Gold</div></div><div class="mb-online on"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--purple);color:#fff">DK</div><div><div class="mb-name">Dewi Kusuma</div><div class="mb-role">Customer · Silver</div></div><div class="mb-online on"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--surf3);color:var(--muted)">TG</div><div><div class="mb-name">Teak & Grain</div><div class="mb-role">Mitra</div></div><div class="mb-online off"></div></div>
+      <div class="mb-item"><div class="mb-av" style="background:var(--surf3);color:var(--muted)">LL</div><div><div class="mb-name">LuxeLight ID</div><div class="mb-role">Mitra</div></div><div class="mb-online off"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PETA MITRA page -->
+<div class="page" id="p-mitramap">
+  <div style="margin-bottom:18px"><div class="sec-lbl">Peta</div><div class="sec-ttl">Peta Showroom Mitra</div></div>
+  <div class="card" style="overflow:hidden">
+    <div style="height:500px;background:linear-gradient(135deg,#1A2820,#1E2E24);display:flex;align-items:center;justify-content:center;position:relative">
+      <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(255,255,255,.03) 40px,rgba(255,255,255,.03) 41px),repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(255,255,255,.03) 50px,rgba(255,255,255,.03) 51px)"></div>
+      <div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);width:320px;background:var(--surf2);border-radius:100px;padding:9px 18px;display:flex;gap:10px;border:1px solid var(--bdr2)">
+        <span style="color:var(--muted)">🔍</span>
+        <input style="border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--txt);flex:1" placeholder="Cari kota atau showroom...">
+      </div>
+      <div style="font-size:20px;color:var(--muted);text-align:center;position:relative;z-index:1">
+        <div style="font-size:48px;margin-bottom:12px">🗺️</div>
+        <div>Peta interaktif akan terintegrasi dengan Google Maps / Mapbox API</div>
+        <div style="font-size:12px;margin-top:6px;color:var(--muted2)">180 showroom mitra di 12 kota besar Indonesia</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:16px">
+          <button class="btn btn-p btn-sm" onclick="toast('Filter: Jakarta')">📍 Jakarta (62)</button>
+          <button class="btn btn-d btn-sm" onclick="toast('Filter: Surabaya')">📍 Surabaya (28)</button>
+          <button class="btn btn-d btn-sm" onclick="toast('Filter: Bandung')">📍 Bandung (24)</button>
+          <button class="btn btn-d btn-sm" onclick="toast('Filter: Lainnya')">+ Kota Lain</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const pgTitles={overview:'Overview',addprod:'Tambah Produk',prodlist:'Daftar Produk',mitra:'Kelola Mitra',mitramap:'Peta Showroom',announce:'Pengumuman',comm:'Chat Community',csadmin:'Customer Service'};
+const pgBread={overview:'Dashboard',addprod:'Produk → Tambah',prodlist:'Produk → Daftar',mitra:'Mitra → Kelola',mitramap:'Mitra → Peta',announce:'Komunikasi → Pengumuman',comm:'Komunikasi → Community',csadmin:'Komunikasi → CS'};
+function go(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('p-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  document.getElementById('tbtitle').textContent=pgTitles[name]||name;
+  document.getElementById('tbbread').textContent=pgBread[name]||name;
+  closeSB();
+}
+function openSB(){document.getElementById('sb').classList.add('open');document.getElementById('sov').classList.add('open');document.body.style.overflow='hidden'}
+function closeSB(){document.getElementById('sb').classList.remove('open');document.getElementById('sov').classList.remove('open');document.body.style.overflow=''}
+let tt;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),3000)}
+function updatePreview(){
+  const n=document.getElementById('pname').value||'Nama produk akan tampil di sini';
+  const p=document.getElementById('pprice').value||'0';
+  document.getElementById('prev-name').textContent=n;
+  document.getElementById('prev-price').textContent='Rp '+p;
+}
+function publishProd(){toast('✅ Produk berhasil dipublikasikan!')}
+function adjStock(btn,d){const inp=btn.parentElement.querySelector('.qty-num');const v=Math.max(0,parseInt(inp.value)+d);inp.value=v;btn.parentElement.parentElement.previousElementSibling.textContent=v}
+function selTkt(el){document.querySelectorAll('.tkt-item').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
+function selATkt(el){document.querySelectorAll('.tkt-item').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
+function openEditMitra(name,loc,ico){
+  document.getElementById('editPanel').classList.add('show');
+  document.getElementById('editPlaceholder').style.display='none';
+  document.getElementById('editName').textContent=name;
+  document.getElementById('editNameInp').value=name;
+  document.getElementById('editPin').textContent=ico;
+}
+function togTarget(el){el.classList.toggle('sel')}
+function sendAnn(){toast('📢 Pengumuman berhasil dikirim ke semua penerima!')}
+const admReplies=['Baik, saya catat. Tim akan segera follow up.','Terima kasih konfirmasinya. Ada yang perlu dibantu lagi?','Sudah kami teruskan ke tim terkait. Estimasi selesai 1×24 jam.','Mohon maaf atas ketidaknyamanannya. Kami prioritaskan ini!'];
+function sendAdm(txt){appendAdmMsg(txt)}
+function sendAdmInp(){const i=document.getElementById('admInp');const t=i.value.trim();if(!t)return;appendAdmMsg(t);i.value='';i.style.height='auto'}
+function appendAdmMsg(txt){const b=document.getElementById('admChatBody');const now=new Date().toLocaleTimeString('id',{hour:'2-digit',minute:'2-digit'});const el=document.createElement('div');el.className='msg admin';el.innerHTML=`<div class="m-av adm">A</div><div><div class="m-bbl">${txt}</div><span class="m-time">${now} · Terkirim</span></div>`;b.appendChild(el);b.scrollTop=9999}
+function selCh(el,name,desc){document.querySelectorAll('.ch-item').forEach(c=>c.classList.remove('active'));el.classList.add('active');document.getElementById('commChName').textContent=name;document.getElementById('commChDesc').textContent=desc+' · 180 anggota'}
+function togReact(el){el.classList.toggle('active')}
+const commRoles={admin:{bg:var_='var(--gold)',fc:'#0F0F12',label:'Admin',lbl:'CA'},mitra:{bg:'var(--sage)',fc:'#fff',label:'Mitra',lbl:'YA'}};
+function sendComm(){const i=document.getElementById('commInp');const t=i.value.trim();if(!t)return;const b=document.getElementById('commBody');const now=new Date().toLocaleTimeString('id',{hour:'2-digit',minute:'2-digit'});const el=document.createElement('div');el.className='comm-msg';el.innerHTML=`<div class="comm-av" style="background:var(--gold);color:#0F0F12">CA</div><div class="comm-content"><div class="comm-header"><div class="comm-name">Center Admin</div><span class="comm-role-badge comm-rb-admin">Admin</span><div class="comm-time">${now}</div></div><div class="comm-bbl">${t}</div><div class="comm-reactions"><button class="react-btn" onclick="togReact(this)">👍 0</button></div></div>`;b.appendChild(el);i.value='';i.style.height='auto';b.scrollTop=9999}
+document.getElementById('admChatBody').scrollTop=9999;
+document.getElementById('commBody').scrollTop=9999;
+</script>
+</body>
+</html>
