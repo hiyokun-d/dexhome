@@ -1,7 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// DexHome — Full Prisma Schema
+// Run: npx prisma migrate dev --name init
+// Then: npx prisma generate
 
 generator client {
   provider = "prisma-client"
@@ -12,8 +11,561 @@ datasource db {
   provider = "postgresql"
 }
 
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum UserRole {
+  CUSTOMER
+  MITRA_USER
+  MITRA_ADMIN
+  CENTER_ADMIN
+}
+
+enum MembershipTier {
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum MitraStatus {
+  ONBOARDING
+  REVIEW
+  ACTIVE
+  SUSPENDED
+}
+
+enum ProductStatus {
+  DRAFT
+  REVIEW
+  ACTIVE
+  INACTIVE
+}
+
+enum WarrantyType {
+  STORE
+  MANUFACTURER
+  DEXHOME
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  CLAIM
+}
+
+enum PointTransactionType {
+  EARN
+  REDEEM
+  BONUS
+  EXPIRE
+  REFUND
+}
+
+enum PointReferenceType {
+  ORDER
+  VOUCHER
+  MANUAL
+  CHECKIN
+}
+
+enum VoucherType {
+  FIXED_DISCOUNT
+  PERCENT_DISCOUNT
+  FREE_SHIPPING
+  CASHBACK
+}
+
+enum WarrantyClaimStatus {
+  SUBMITTED
+  REVIEWING
+  APPROVED
+  REJECTED
+  RESOLVED
+}
+
+enum InsuranceStatus {
+  ACTIVE
+  CLAIMED
+  EXPIRED
+}
+
+enum AnnouncementCategory {
+  PROMO
+  SYSTEM
+  EVENT
+  POLICY
+  URGENT
+}
+
+enum AnnouncementPriority {
+  NORMAL
+  IMPORTANT
+  URGENT
+}
+
+enum AnnouncementTarget {
+  ALL_MITRA
+  VERIFIED_MITRA
+  SPECIFIC
+}
+
+enum CSTicketStatus {
+  OPEN
+  ANSWERED
+  RESOLVED
+  CLOSED
+}
+
+enum CSTicketPriority {
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum CSMessageSenderRole {
+  CUSTOMER
+  AGENT
+}
+
+enum CommunityPostStatus {
+  ACTIVE
+  HIDDEN
+  DELETED
+}
+
+// =============================================================================
+// Users & Auth
+// =============================================================================
+
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id           String   @id @default(uuid())
+  email        String   @unique
+  phone        String   @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customerProfile CustomerProfile?
+  mitraProfile    MitraProfile?
+  createdAnnouncements Announcement[] @relation("AnnouncementCreator")
+  assignedTickets      CSTicket[]     @relation("TicketAgent")
+  csMessages           CSMessage[]
+}
+
+model CustomerProfile {
+  id             String         @id @default(uuid())
+  userId         String         @unique
+  fullName       String
+  membershipTier MembershipTier @default(SILVER)
+  totalPoints    Int            @default(0)
+  tierExpiresAt  DateTime?
+  avatarUrl      String?
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders            Order[]
+  pointTransactions PointTransaction[]
+  voucherClaims     VoucherClaim[]
+  warrantyClaims    WarrantyClaim[]
+  csTickets         CSTicket[]
+  wishlist          Wishlist[]
+  reviews           ProductReview[]
+}
+
+model MitraProfile {
+  id           String      @id @default(uuid())
+  userId       String      @unique
+  mitraCode    String      @unique
+  showroomName String
+  address      String
+  city         String
+  latitude     Float
+  longitude    Float
+  status       MitraStatus @default(ONBOARDING)
+  verifiedAt   DateTime?
+  logoUrl      String?
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products          Product[]
+  stockItems        StockPerShowroom[]
+  fulfilledOrders   Order[]
+  pointInputs       PointTransaction[] @relation("MitraPointInput")
+  announcementReads AnnouncementRead[]
+  communityPosts    CommunityPost[]
+  communityReplies  CommunityReply[]
+  communityLikes    CommunityLike[]
+}
+
+// =============================================================================
+// Products & Catalog
+// =============================================================================
+
+model Category {
+  id       String  @id @default(uuid())
+  name     String
+  slug     String  @unique
+  icon     String
+  parentId String?
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  products Product[]
+}
+
+model Product {
+  id                 String        @id @default(uuid())
+  sku                String        @unique
+  name               String
+  description        String
+  categoryId         String
+  mitraId            String
+  price              Int
+  originalPrice      Int?
+  memberDiscountPct  Int           @default(0)
+  pointsPerTxn       Int           @default(0)
+  warrantyMonths     Int
+  warrantyType       WarrantyType
+  insuranceAvailable Boolean       @default(false)
+  weightKg           Float
+  dimensionsCm       String
+  status             ProductStatus @default(DRAFT)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  category   Category           @relation(fields: [categoryId], references: [id])
+  mitra      MitraProfile       @relation(fields: [mitraId], references: [id])
+  images     ProductImage[]
+  variants   ProductVariant[]
+  stockItems StockPerShowroom[]
+  orderItems OrderItem[]
+  wishlist   Wishlist[]
+  reviews    ProductReview[]
+}
+
+model ProductImage {
+  id        String @id @default(uuid())
+  productId String
+  url       String
+  order     Int    @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductVariant {
+  id         String  @id @default(uuid())
+  productId  String
+  size       String?
+  color      String?
+  colorHex   String?
+  priceDelta Int     @default(0)
+  skuSuffix  String
+
+  product    Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  stockItems StockPerShowroom[]
+  orderItems OrderItem[]
+}
+
+model StockPerShowroom {
+  id          String   @id @default(uuid())
+  productId   String
+  variantId   String?
+  mitraId     String
+  quantity    Int      @default(0)
+  minQuantity Int      @default(5)
+  updatedAt   DateTime @updatedAt
+
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+  mitra   MitraProfile   @relation(fields: [mitraId], references: [id])
+
+  @@unique([productId, variantId, mitraId])
+}
+
+// =============================================================================
+// Orders & Transactions
+// =============================================================================
+
+model Order {
+  id                  String      @id @default(uuid())
+  orderNumber         String      @unique
+  customerId          String
+  mitraId             String
+  status              OrderStatus @default(PENDING)
+  totalAmount         Int
+  discountAmount      Int         @default(0)
+  voucherId           String?
+  pointsEarned        Int         @default(0)
+  pointsUsed          Int         @default(0)
+  paymentMethod       String
+  installmentProvider String?
+  shippingAddress     Json
+  notes               String      @default("")
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  customer      CustomerProfile @relation(fields: [customerId], references: [id])
+  mitra         MitraProfile    @relation(fields: [mitraId], references: [id])
+  voucher       Voucher?        @relation(fields: [voucherId], references: [id])
+  items         OrderItem[]
+  voucherClaims VoucherClaim[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  variantId String?
+  quantity  Int
+  unitPrice Int
+  subtotal  Int
+
+  order          Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product            @relation(fields: [productId], references: [id])
+  variant        ProductVariant?    @relation(fields: [variantId], references: [id])
+  warrantyClaims WarrantyClaim[]
+  insurance      InsuranceCoverage?
+  review         ProductReview?
+}
+
+// =============================================================================
+// Points & Vouchers
+// =============================================================================
+
+model PointTransaction {
+  id             String               @id @default(uuid())
+  customerId     String
+  type           PointTransactionType
+  amount         Int
+  referenceType  PointReferenceType
+  referenceId    String?
+  description    String
+  inputByMitraId String?
+  expiresAt      DateTime?
+  createdAt      DateTime             @default(now())
+
+  customer     CustomerProfile @relation(fields: [customerId], references: [id])
+  inputByMitra MitraProfile?   @relation("MitraPointInput", fields: [inputByMitraId], references: [id])
+}
+
+model Voucher {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String
+  type        VoucherType
+  value       Int
+  minPurchase Int         @default(0)
+  maxUses     Int?
+  usesPerUser Int         @default(1)
+  pointsCost  Int         @default(0)
+  validFrom   DateTime
+  validUntil  DateTime
+  createdAt   DateTime    @default(now())
+
+  claims VoucherClaim[]
+  orders Order[]
+}
+
+model VoucherClaim {
+  id         String    @id @default(uuid())
+  voucherId  String
+  customerId String
+  usedAt     DateTime?
+  orderId    String?
+
+  voucher  Voucher         @relation(fields: [voucherId], references: [id])
+  customer CustomerProfile @relation(fields: [customerId], references: [id])
+  order    Order?          @relation(fields: [orderId], references: [id])
+
+  @@unique([voucherId, customerId])
+}
+
+// =============================================================================
+// Warranty & Insurance
+// =============================================================================
+
+model WarrantyClaim {
+  id           String              @id @default(uuid())
+  orderItemId  String
+  customerId   String
+  status       WarrantyClaimStatus @default(SUBMITTED)
+  description  String
+  evidenceUrls Json                @default("[]")
+  resolvedAt   DateTime?
+  createdAt    DateTime            @default(now())
+
+  orderItem OrderItem       @relation(fields: [orderItemId], references: [id])
+  customer  CustomerProfile @relation(fields: [customerId], references: [id])
+}
+
+model InsuranceCoverage {
+  id             String          @id @default(uuid())
+  orderItemId    String          @unique
+  provider       String
+  policyNumber   String
+  coverageAmount Int
+  expiresAt      DateTime
+  status         InsuranceStatus @default(ACTIVE)
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+}
+
+// =============================================================================
+// Announcements
+// =============================================================================
+
+model Announcement {
+  id             String               @id @default(uuid())
+  title          String
+  content        String
+  category       AnnouncementCategory
+  priority       AnnouncementPriority @default(NORMAL)
+  target         AnnouncementTarget
+  targetMitraIds Json?
+  attachmentUrl  String?
+  publishedAt    DateTime
+  createdBy      String
+  createdAt      DateTime             @default(now())
+
+  creator User               @relation("AnnouncementCreator", fields: [createdBy], references: [id])
+  reads   AnnouncementRead[]
+}
+
+model AnnouncementRead {
+  id             String   @id @default(uuid())
+  announcementId String
+  mitraId        String
+  readAt         DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  mitra        MitraProfile @relation(fields: [mitraId], references: [id])
+
+  @@unique([announcementId, mitraId])
+}
+
+// =============================================================================
+// Customer Service
+// =============================================================================
+
+model CSTicket {
+  id              String           @id @default(uuid())
+  ticketNumber    String           @unique
+  customerId      String
+  assignedAgentId String?
+  subject         String
+  status          CSTicketStatus   @default(OPEN)
+  priority        CSTicketPriority @default(NORMAL)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  resolvedAt      DateTime?
+
+  customer      CustomerProfile @relation(fields: [customerId], references: [id])
+  assignedAgent User?           @relation("TicketAgent", fields: [assignedAgentId], references: [id])
+  messages      CSMessage[]
+}
+
+model CSMessage {
+  id            String              @id @default(uuid())
+  ticketId      String
+  senderId      String
+  senderRole    CSMessageSenderRole
+  content       String
+  attachmentUrl String?
+  createdAt     DateTime            @default(now())
+
+  ticket CSTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User     @relation(fields: [senderId], references: [id])
+}
+
+// =============================================================================
+// Community (Mitra only)
+// =============================================================================
+
+model CommunityPost {
+  id           String              @id @default(uuid())
+  mitraId      String
+  content      String
+  tags         Json                @default("[]")
+  likesCount   Int                 @default(0)
+  repliesCount Int                 @default(0)
+  status       CommunityPostStatus @default(ACTIVE)
+  createdAt    DateTime            @default(now())
+
+  mitra   MitraProfile     @relation(fields: [mitraId], references: [id])
+  replies CommunityReply[]
+  likes   CommunityLike[]
+}
+
+model CommunityReply {
+  id        String   @id @default(uuid())
+  postId    String
+  mitraId   String
+  content   String
+  createdAt DateTime @default(now())
+
+  post  CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mitra MitraProfile  @relation(fields: [mitraId], references: [id])
+}
+
+model CommunityLike {
+  id        String   @id @default(uuid())
+  postId    String
+  mitraId   String
+  createdAt DateTime @default(now())
+
+  post  CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mitra MitraProfile  @relation(fields: [mitraId], references: [id])
+
+  @@unique([postId, mitraId])
+}
+
+// =============================================================================
+// Wishlist & Reviews
+// =============================================================================
+
+model Wishlist {
+  id         String   @id @default(uuid())
+  customerId String
+  productId  String
+  createdAt  DateTime @default(now())
+
+  customer CustomerProfile @relation(fields: [customerId], references: [id])
+  product  Product         @relation(fields: [productId], references: [id])
+
+  @@unique([customerId, productId])
+}
+
+model ProductReview {
+  id               String   @id @default(uuid())
+  orderItemId      String   @unique
+  customerId       String
+  productId        String
+  rating           Int
+  comment          String?
+  images           Json     @default("[]")
+  verifiedPurchase Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  orderItem OrderItem       @relation(fields: [orderItemId], references: [id])
+  customer  CustomerProfile @relation(fields: [customerId], references: [id])
+  product   Product         @relation(fields: [productId], references: [id])
+}
+
+// =============================================================================
+// Analytics
+// =============================================================================
+
+model DailyMetric {
+  id                     String   @id @default(uuid())
+  date                   DateTime @unique @db.Date
+  gmv                    BigInt   @default(0)
+  transactionCount       Int      @default(0)
+  newCustomers           Int      @default(0)
+  activeCustomers        Int      @default(0)
+  openTickets            Int      @default(0)
+  avgResponseTimeMinutes Float    @default(0)
 }
