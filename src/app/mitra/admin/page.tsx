@@ -45,7 +45,7 @@ function Btn({ variant = "primary", sm, onClick, children }: { variant?: "primar
     outline: { background: T.surf3, color: T.txt, border: `1px solid ${T.border2}` },
     danger: { background: "rgba(196,87,42,.15)", color: T.terra, border: `1px solid rgba(196,87,42,.3)` },
   };
-  return <button onClick={onClick} style={{ padding: sm ? "5px 12px" : "8px 18px", borderRadius: 8, fontSize: sm ? 11 : 12, fontWeight: 600, cursor: "pointer", transition: "all .2s", border: "none", display: "inline-flex", alignItems: "center", gap: 6, ...styles[variant] }}>{children}</button>;
+  return <button type="button" onClick={onClick} style={{ padding: sm ? "5px 12px" : "8px 18px", borderRadius: 8, fontSize: sm ? 11 : 12, fontWeight: 600, cursor: "pointer", transition: "all .2s", border: "none", display: "inline-flex", alignItems: "center", gap: 6, ...styles[variant] }}>{children}</button>;
 }
 
 function SectionHeader({ label, title, action }: { label: string; title: string; action?: React.ReactNode }) {
@@ -244,9 +244,9 @@ function StockManagement() {
                   </td>
                   <td style={{ padding: "12px 16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <button onClick={() => adjust(idx, -1)} style={{ width: 28, height: 28, borderRadius: 6, background: T.surf3, border: `1px solid ${T.border2}`, color: T.txt, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                      <button type="button" onClick={() => adjust(idx, -1)} style={{ width: 28, height: 28, borderRadius: 6, background: T.surf3, border: `1px solid ${T.border2}`, color: T.txt, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
                       <span style={{ width: 36, textAlign: "center", fontSize: 13, fontWeight: 700, color: T.txt }}>{item.stock}</span>
-                      <button onClick={() => adjust(idx, 1)} style={{ width: 28, height: 28, borderRadius: 6, background: T.surf3, border: `1px solid ${T.border2}`, color: T.txt, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                      <button type="button" onClick={() => adjust(idx, 1)} style={{ width: 28, height: 28, borderRadius: 6, background: T.surf3, border: `1px solid ${T.border2}`, color: T.txt, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
                     </div>
                   </td>
                 </tr>
@@ -464,6 +464,7 @@ export default function MitraAdminPortal() {
           <div style={{ fontSize: 9, fontWeight: 700, color: T.muted2, letterSpacing: ".1em", textTransform: "uppercase", padding: "0 10px", margin: "10px 0 5px" }}>Manajemen</div>
           {navItems.map(item => (
             <button
+              type="button"
               key={item.id}
               onClick={() => { setActive(item.id); setSidebarOpen(false); }}
               className="nav-item"
@@ -481,14 +482,14 @@ export default function MitraAdminPortal() {
           ))}
           <div style={{ fontSize: 9, fontWeight: 700, color: T.muted2, letterSpacing: ".1em", textTransform: "uppercase", padding: "0 10px", margin: "12px 0 5px" }}>Akun</div>
           {[["👤","Profil Admin"],["📊","Laporan"]].map(([ico,lbl]) => (
-            <button key={lbl} className="nav-item" style={{ color: T.muted }}>
+            <button type="button" key={lbl} className="nav-item" style={{ color: T.muted }}>
               <span style={{ fontSize: 16, width: 18, textAlign: "center" }}>{ico}</span>{lbl}
             </button>
           ))}
         </nav>
 
         <div style={{ padding: "10px 8px", borderTop: `1px solid ${T.border}` }}>
-          <button className="nav-item" style={{ color: T.muted }}>
+          <button type="button" className="nav-item" style={{ color: T.muted }}>
             <span style={{ fontSize: 16, width: 18, textAlign: "center" }}>🚪</span>Keluar
           </button>
         </div>
@@ -496,7 +497,7 @@ export default function MitraAdminPortal() {
 
       {/* Topbar */}
       <header className="portal-topbar" style={{ background: `rgba(19,17,26,.95)`, borderBottom: `1px solid ${T.border}` }}>
-        <button className="ham-btn" onClick={() => setSidebarOpen(true)} style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: T.txt }}>☰</button>
+        <button type="button" className="ham-btn" onClick={() => setSidebarOpen(true)} style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: T.txt }}>☰</button>
         <div>
           <div style={{ fontSize: 15, fontWeight: 600, color: T.txt }}>{titles[active]}</div>
           <div style={{ fontSize: 11, color: T.muted }}>Homera Studio · Admin Panel</div>
@@ -506,7 +507,7 @@ export default function MitraAdminPortal() {
             <span style={{ color: T.muted, fontSize: 13 }}>🔍</span>
             <input placeholder="Cari order, produk..." style={{ color: T.txt, fontSize: 12 }} />
           </div>
-          <button className="icon-btn" style={{ background: T.surf2, border: `1px solid ${T.border}`, color: T.txt }}>
+          <button type="button" className="icon-btn" style={{ background: T.surf2, border: `1px solid ${T.border}`, color: T.txt }}>
             🔔<div className="notif-dot" />
           </button>
         </div>

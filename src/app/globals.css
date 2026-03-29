@@ -241,14 +241,14 @@ html { scroll-behavior: smooth; }
 .sidebar-overlay.open { display: block; }
 
 /* ── Responsive ── */
+.ham-btn { display: none; }
 @media (max-width: 900px) {
   .portal-sidebar { transform: translateX(-256px); }
   .portal-sidebar.open { transform: translateX(0); }
   .portal-topbar { left: 0; padding: 0 14px; }
   .portal-main { margin-left: 0; }
-  .ham-btn { display: flex !important; }
+  .ham-btn { display: flex; }
 }
-.ham-btn { display: none; }
 
 /* ── Animations ── */
 @keyframes fadeUp {

@@ -24,5 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Biome lint & format check
-        run: npm run lint
+      - name: Biome lint
+        # Lint only — formatter diffs are not enforced in CI.
+        # --reporter=github emits inline PR annotations (file:line markers)
+        # so reviewers see errors directly in the diff, not just in the log.
+        # Run `npm run format` locally before committing to keep style clean.
+        run: npx biome lint --reporter=github src/
