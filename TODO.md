@@ -1,226 +1,256 @@
 # DexHome — Developer TODO
 
-> **Last updated:** 2026-03-23
+> **Last updated:** 2026-03-29
 >
-> This is a living document. Features are organized by priority and role.
-> The client brief is still being clarified — items marked `[UNCLEAR]` need follow-up.
+> Living document. Work top-to-bottom — each phase unblocks the next.
+> Items marked `[?]` need client clarification before building.
 
 ---
 
-## Role Overview
+## Status Legend
 
-| Role | Portal | Access Level |
-|---|---|---|
-| `CUSTOMER` | `/customer` | Catalog, dashboard, showroom finder, CS |
-| `MITRA_USER` | `/mitra` | Own catalog, announcements, community |
-| `MITRA_ADMIN` | `/mitra/admin` | Stock, point input, sales, staff |
-| `CENTER_ADMIN` | `/admin` | Everything — full platform control |
-
----
-
-## Phase 0 — Foundation (do this first, unblocks everything)
-
-- [ ] **Set up database** — pick Supabase or Neon (PostgreSQL), add `DATABASE_URL` to `.env`
-- [ ] **Implement full Prisma schema** — translate `SCHEMA.md` into `prisma/schema.prisma` (~40 models)
-- [ ] **Run first migration** — `prisma migrate dev --name init`
-- [ ] **Authentication** — implement auth with role-based access
-  - Recommended: NextAuth.js v5 (`next-auth`) or Supabase Auth
-  - Session must carry `role`, `userId`, and `profileId` (customer/mitra)
-  - Protect routes via middleware (`src/middleware.ts`)
-  - Login page per portal or unified `/login?role=customer`
-- [ ] **Middleware route protection** — redirect unauthenticated users, enforce role per route prefix
-- [ ] **Break down monolithic page files** — `mitra/admin/page.tsx` (11k lines) and `admin/page.tsx` (18k lines) must be split into components before the team can work on them in parallel (see Component Structure section below)
-- [ ] **Environment setup** — fill out `.env` from `.env.example`, never commit `.env`
+| Symbol | Meaning |
+|---|---|
+| `[ ]` | Not started |
+| `[~]` | In progress |
+| `[x]` | Done |
+| `[?]` | Blocked — needs client answer |
 
 ---
 
-## Phase 1 — Core Features
+## Phase 0 — Foundation (do this first)
 
-### 1. Dashboard (Customer)
-
-> Membership points, purchase history, vouchers, insurance status
-
-- [ ] `GET /api/customer/dashboard` — aggregate: total points, tier, orders count, active vouchers, insurance items
-- [ ] Points balance card with tier badge (Silver / Gold / Platinum)
-- [ ] Purchase history list with order status tracking
-- [ ] Active vouchers grid (redeemable / expiring soon)
-- [ ] Insurance coverage list (per order item)
-- [ ] Points history log (`PointTransaction` table) with earn/redeem breakdown
-- [ ] `[UNCLEAR]` Does the client want a tier upgrade progress bar?
-
-### 2. Katalog (Customer)
-
-> Browse products; find nearest mitra that stocks the item
-
-- [ ] Product listing page with category filter, price filter, search
-- [ ] Product detail page (images, variants, warranty info, mitra availability)
-- [ ] **Nearest mitra logic** — when customer views a product, show which showrooms stock it sorted by distance
-  - Customer must grant location permission (browser Geolocation API)
-  - Fallback: manual city/area filter
-  - Backend: `GET /api/catalog/products/[id]/availability?lat=&lng=` — returns `StockPerShowroom[]` sorted by Haversine distance
-- [ ] Wishlist (add/remove, persisted to `Wishlist` table)
-- [ ] Product reviews section (`ProductReview` table)
-- [ ] `[UNCLEAR]` Are products platform-wide or per-mitra catalog? (SCHEMA suggests products belong to a mitra — confirm with client)
-
-### 3. Showroom Finder (Customer)
-
-> Map view of all showrooms + list view; customer can find and navigate to stores
-
-- [ ] **Map integration** — embed interactive map showing all `ACTIVE` mitra locations
-  - Recommended lib: `react-leaflet` (OSM, free) or Google Maps JS API (requires API key)
-  - Markers for each showroom, click → showroom info popup
-- [ ] List view alongside map (toggleable)
-- [ ] Showroom detail page: name, address, phone, hours, products in stock, photos
-- [ ] Search/filter by city or area
-- [ ] "Get directions" link (opens Google Maps / Waze with coordinates)
-- [ ] `GET /api/showrooms` — return all active mitra with `lat`, `lng`, `showroom_name`, `city`
-- [ ] `[UNCLEAR]` Should map filter by product category? (e.g. "show only showrooms with sofas")
-
-### 4. Customer Service (Customer)
-
-> Submit complaints and warranty claims
-
-- [ ] Create CS ticket form (subject, category: complaint / warranty claim, description, photo upload)
-- [ ] Ticket list page — customer sees all their open/resolved tickets
-- [ ] Ticket detail / chat view — `CSMessage[]` thread between customer and agent
-- [ ] File/image attachment support (upload to storage, store URL in `CSMessage.attachment_url`)
-- [ ] Warranty claim flow:
-  - Select order item → fill claim form → attach evidence photos
-  - Creates `WarrantyClaim` record linked to `CSTicket`
-- [ ] Push notification or email on ticket status change `[UNCLEAR - need notification strategy]`
+- [x] **Full Prisma schema** — 25 models, 18 enums in `prisma/schema.prisma`
+- [ ] **Database** — create a Supabase or Neon project, paste `DATABASE_URL` into `.env`
+- [ ] **First migration** — `npx prisma migrate dev --name init`
+- [ ] **Authentication** — implement NextAuth.js v5
+  - Login page: `/login` (unified, redirect by role after sign-in)
+  - Session shape must carry: `{ id, email, role, profileId }`
+  - Providers: email+password (credentials) + optional Google OAuth
+- [ ] **Middleware** — `src/middleware.ts` route guard
+  - `/customer/*` → requires `CUSTOMER`
+  - `/mitra/admin/*` → requires `MITRA_ADMIN`
+  - `/mitra/*` → requires `MITRA_USER` or `MITRA_ADMIN`
+  - `/admin/*` → requires `CENTER_ADMIN`
+  - Unauthenticated → redirect to `/login`
+- [ ] **Environment file** — create `.env.example` with all required keys documented
 
 ---
 
-## Phase 2 — Mitra Features
+## Phase 1 — Component Extraction (do before API wiring)
 
-### Mitra User (`/mitra`)
+> All 4 portal pages are monolithic (400–900 lines of inline JSX). Extract before
+> adding more code — otherwise the files become impossible to work on in parallel.
 
-- [ ] Announcements list — read status per announcement (`AnnouncementRead` table), mark as read on open
-- [ ] My Catalog — show products belonging to this mitra's showroom, quick stock view
-- [ ] Community forum — create posts, reply, like (`CommunityPost`, `CommunityReply`, `CommunityLike`)
-- [ ] `[UNCLEAR]` Can MITRA_USER edit their catalog or is that MITRA_ADMIN only?
+### Layout (shared across all portals)
 
-### Mitra Admin (`/mitra/admin`)
+- [ ] `src/components/layout/PortalShell.tsx` — sidebar + topbar wrapper
+- [ ] `src/components/layout/Sidebar.tsx` — nav items, active state, role-aware
+- [ ] `src/components/layout/Topbar.tsx` — search bar, notification bell, user avatar
 
-- [ ] **Point input** — search customer by phone/email → input points for a transaction
-  - Creates `PointTransaction` with `input_by_mitra_id`
-  - Validate: customer exists, amount is positive
-- [ ] **Stock management** — CRUD for `StockPerShowroom` per product/variant
-  - Low stock alerts (quantity ≤ `min_quantity`)
-- [ ] **Sales monitoring** — orders fulfilled by this mitra, revenue summary, daily/monthly view
-- [ ] Manage showroom profile (address, coordinates, logo, operating hours `[UNCLEAR if in schema]`)
-- [ ] Staff management — invite/remove `MITRA_USER` accounts linked to this showroom `[UNCLEAR]`
+### UI Primitives (shared)
+
+- [ ] `src/components/ui/KpiCard.tsx` — metric + icon + trend pill
+- [ ] `src/components/ui/DataTable.tsx` — generic sortable table
+- [ ] `src/components/ui/Badge.tsx` — status colors per enum value
+- [ ] `src/components/ui/Modal.tsx` — accessible dialog wrapper
+- [ ] `src/components/ui/FilterTabs.tsx` — tab strip with active indicator
+
+### Customer Components
+
+- [ ] `src/components/customer/PointsCard.tsx` — balance, tier badge, progress bar
+- [ ] `src/components/customer/OrderHistory.tsx` — order table with status tracking
+- [ ] `src/components/customer/VoucherGrid.tsx` — voucher cards (active/expiring/used)
+- [ ] `src/components/customer/InsuranceList.tsx` — per-item insurance status
+
+### Catalog Components
+
+- [ ] `src/components/catalog/ProductCard.tsx` — image, name, price, wishlist toggle
+- [ ] `src/components/catalog/ProductGrid.tsx` — responsive grid with filter sidebar
+- [ ] `src/components/catalog/AvailabilityMap.tsx` — nearest mitra list/map for product
+
+### Showroom Components
+
+- [ ] `src/components/showroom/ShowroomMap.tsx` — map embed with mitra markers
+- [ ] `src/components/showroom/ShowroomCard.tsx` — list item: name, city, distance, CTA
+
+### Mitra Components
+
+- [ ] `src/components/mitra/AnnouncementList.tsx` — cards with read/unread state
+- [ ] `src/components/mitra/CatalogTable.tsx` — product table with inline stock edit
+- [ ] `src/components/mitra/CommunityFeed.tsx` — post list, composer, like/reply actions
+
+### Customer Service Components
+
+- [ ] `src/components/cs/TicketForm.tsx` — new ticket form with file upload
+- [ ] `src/components/cs/TicketList.tsx` — sortable ticket queue
+- [ ] `src/components/cs/MessageThread.tsx` — chat-style message view with attachments
 
 ---
 
-## Phase 3 — Center Admin Features (`/admin`)
+## Phase 2 — API Routes & Database Wiring
 
-- [ ] **Mitra management** — list all mitra, approve/suspend, view per-mitra analytics
-- [ ] **Onboarding flow** for new mitra (`ONBOARDING` → `REVIEW` → `ACTIVE`)
-- [ ] **Platform analytics dashboard** — GMV, transaction count, new customers, open CS tickets (from `DailyMetric`)
-- [ ] **Announcement management** — create/edit/delete announcements, target by mitra status
-- [ ] **CS oversight** — view all open tickets, assign agents, escalate
-- [ ] **Voucher management** — create promotional vouchers, set rules
-- [ ] **Product moderation** — approve/reject products in `REVIEW` status
-- [ ] **User management** — view all users, ban, role changes
+> Wire each portal section to real data. The UI mockups already show what's needed —
+> just replace hardcoded arrays with `fetch()` calls to these routes.
+
+### Auth API
+
+- [ ] `POST /api/auth/[...nextauth]` — NextAuth route handler
+- [ ] `GET  /api/auth/session` — returns `SessionUser` shape
+
+### Customer API
+
+- [ ] `GET  /api/customer/dashboard` — points, tier, order stats, active vouchers, insurance summary
+- [ ] `GET  /api/customer/orders` — paginated order history with items
+- [ ] `GET  /api/customer/orders/[id]` — single order detail
+- [ ] `GET  /api/customer/points` — paginated `PointTransaction[]`
+- [ ] `GET  /api/customer/vouchers` — claimed vouchers (active/used/expired)
+- [ ] `POST /api/customer/vouchers/claim` — redeem voucher by code
+- [ ] `GET  /api/customer/wishlist` — wishlist items
+- [ ] `POST /api/customer/wishlist` — add to wishlist
+- [ ] `DELETE /api/customer/wishlist/[productId]` — remove from wishlist
+
+### Catalog API
+
+- [ ] `GET  /api/catalog/products` — list with `?category=&search=&minPrice=&maxPrice=&page=`
+- [ ] `GET  /api/catalog/products/[id]` — product detail with images and variants
+- [ ] `GET  /api/catalog/products/[id]/availability` — `?lat=&lng=` → nearest `StockPerShowroom[]`
+- [ ] `GET  /api/catalog/categories` — category tree
+
+### Showroom API
+
+- [ ] `GET  /api/showrooms` — all `ACTIVE` mitra with lat/lng/city/name
+- [ ] `GET  /api/showrooms/[id]` — showroom detail + in-stock product count
+
+### CS API
+
+- [ ] `POST /api/cs/tickets` — create ticket (+ optional warranty claim)
+- [ ] `GET  /api/cs/tickets` — customer's own tickets (paginated)
+- [ ] `GET  /api/cs/tickets/[id]` — ticket + messages
+- [ ] `POST /api/cs/tickets/[id]/messages` — send a message
+- [ ] `POST /api/upload` — upload file, returns CDN URL
+
+### Mitra User API
+
+- [ ] `GET  /api/mitra/announcements` — announcements for this mitra (with read status)
+- [ ] `POST /api/mitra/announcements/[id]/read` — mark as read
+- [ ] `GET  /api/mitra/catalog` — this mitra's products + stock
+- [ ] `GET  /api/mitra/community/posts` — paginated community feed
+- [ ] `POST /api/mitra/community/posts` — create post
+- [ ] `POST /api/mitra/community/posts/[id]/replies` — reply to post
+- [ ] `POST /api/mitra/community/posts/[id]/like` — toggle like
+
+### Mitra Admin API
+
+- [ ] `GET  /api/mitra/admin/dashboard` — GMV, orders, critical stock, rating
+- [ ] `GET  /api/mitra/admin/orders` — orders fulfilled by this mitra
+- [ ] `PATCH /api/mitra/admin/orders/[id]` — update order status
+- [ ] `GET  /api/mitra/admin/stock` — `StockPerShowroom[]` for this mitra
+- [ ] `PATCH /api/mitra/admin/stock/[id]` — update quantity
+- [ ] `POST /api/mitra/admin/points` — input points for a customer
+- [ ] `GET  /api/mitra/admin/points/history` — this mitra's point input log
+
+### Center Admin API
+
+- [ ] `GET  /api/admin/overview` — platform KPIs + GMV chart + top mitra
+- [ ] `GET  /api/admin/mitras` — all mitras, paginated + filterable
+- [ ] `PATCH /api/admin/mitras/[id]` — approve/suspend/update mitra
+- [ ] `GET  /api/admin/products` — all products across platform (with moderation filter)
+- [ ] `POST /api/admin/products` — create product
+- [ ] `PATCH /api/admin/products/[id]` — update/approve/reject product
+- [ ] `DELETE /api/admin/products/[id]` — deactivate product
+- [ ] `GET  /api/admin/announcements` — all announcements with read counts
+- [ ] `POST /api/admin/announcements` — create and publish announcement
+- [ ] `GET  /api/admin/cs/tickets` — all tickets (agent view, filterable)
+- [ ] `PATCH /api/admin/cs/tickets/[id]` — assign agent, change status
+- [ ] `GET  /api/admin/vouchers` — all vouchers
+- [ ] `POST /api/admin/vouchers` — create voucher
+- [ ] `PATCH /api/admin/vouchers/[id]` — edit/deactivate voucher
+- [ ] `GET  /api/admin/users` — all users (replace stub in `/api/users`)
 
 ---
 
-## Technical Backlog
+## Phase 3 — Features Requiring External Services
 
-### API Design
-- [ ] Standardize API response shape: `{ data, error, meta }` — create a helper `src/lib/api-response.ts`
-- [ ] Add request validation (zod recommended) to all POST/PATCH routes
-- [ ] Error handling middleware / wrapper for API routes
-- [ ] Pagination helper for list endpoints
+> Don't start these until Phase 2 is at least 60% done. Each needs a vendor decision.
 
-### Auth & Security
-- [ ] CSRF protection (built-in with NextAuth, verify)
-- [ ] Rate limiting on auth endpoints
-- [ ] Input sanitization on all user-submitted text fields
-- [ ] File upload size/type validation
+### Map Integration — Showroom Finder
 
-### File Storage
-- [ ] Decide storage provider for uploads (product images, CS attachments, showroom logos)
-  - Recommended: Supabase Storage or Cloudflare R2 (S3-compatible)
-- [ ] Create upload API route: `POST /api/upload` → returns CDN URL
+- [?] **Decide provider:** `react-leaflet` + OpenStreetMap (free) vs. Google Maps (paid, better UX)
+- [ ] Embed map in `ShowroomMap.tsx` with mitra markers
+- [ ] Click marker → showroom popup (name, address, CTA: "Buka di Maps")
+- [ ] "Get directions" link → `https://maps.google.com/?q=<lat>,<lng>`
+- [ ] Geocode mitra address → lat/lng during mitra onboarding (or admin edit)
+- [?] Filter map by product category?
 
-### Real-time (for CS chat)
-- [ ] Option A: Supabase Realtime (easy if using Supabase)
-- [ ] Option B: Pusher / Ably (third-party, more reliable)
-- [ ] Option C: Server-Sent Events (simple, one-way push, good enough for basic notifications)
+### File Storage — Uploads
 
-### Maps
-- [ ] Decide map provider before building showroom finder
-  - `react-leaflet` + OpenStreetMap = free, no API key
-  - Google Maps = requires billing account, better UX
-- [ ] Geocoding for mitra address → lat/lng on mitra onboarding
+- [?] **Decide provider:** Supabase Storage (if using Supabase) or Cloudflare R2
+- [ ] `POST /api/upload` — validate file type (images: jpg/png/webp, docs: pdf), size limit 10MB, return CDN URL
+- [ ] Wire upload to: product images, CS ticket attachments, announcement attachments, showroom logo
 
-### Performance
-- [ ] Implement `loading.tsx` skeleton loaders for all portal sections
+### Real-time — CS Chat & Notifications
+
+- [?] **Decide strategy:**
+  - **Option A:** Supabase Realtime — zero extra setup if already on Supabase
+  - **Option B:** Server-Sent Events — simple, no vendor, one-way push
+  - **Option C:** Pusher/Ably — full duplex, extra cost
+- [ ] Live message delivery in CS ticket thread
+- [ ] Unread notification count badge in sidebar (now hardcoded as `2`, `47`)
+
+### Payment — Order Flow
+
+- [?] **CRITICAL — confirm with client:** Does the customer order through the app, or does the app just connect them to visit the showroom in person?
+- If in-app orders:
+  - [?] Payment gateway: **Midtrans** (most common in ID) or **Xendit**?
+  - [ ] `POST /api/orders` — create order, initiate payment
+  - [ ] Payment callback webhook
+  - [ ] Order status update flow
+
+---
+
+## Phase 4 — Polish & Production Readiness
+
+- [ ] `loading.tsx` skeleton screens for every portal section
 - [ ] `error.tsx` boundaries per route segment
-- [ ] Image optimization — use `next/image` for all product/showroom images
+- [ ] `not-found.tsx` pages
+- [ ] All images through `next/image` (not `<img>`)
+- [ ] Rate limiting on auth + upload endpoints
+- [ ] CSRF verification (check NextAuth v5 defaults)
+- [ ] Input sanitization on all user-submitted text
+- [ ] Pagination on all list endpoints (currently returns all rows)
+- [ ] Seed script (`prisma/seed.ts`) with realistic sample data for development
 
 ---
 
-## Component Structure (refactoring needed)
+## Shared Library TODOs
 
-Current page files are monolithic. Split before team scales:
-
-```
-src/
-├── components/
-│   ├── layout/
-│   │   ├── Sidebar.tsx          # reusable portal sidebar
-│   │   ├── Topbar.tsx           # reusable portal topbar
-│   │   └── PortalShell.tsx      # wrapper with sidebar + topbar
-│   ├── ui/
-│   │   ├── KpiCard.tsx
-│   │   ├── DataTable.tsx
-│   │   ├── Badge.tsx
-│   │   ├── Modal.tsx
-│   │   └── FilterTabs.tsx
-│   ├── customer/
-│   │   ├── PointsCard.tsx
-│   │   ├── OrderHistory.tsx
-│   │   ├── VoucherGrid.tsx
-│   │   └── InsuranceList.tsx
-│   ├── mitra/
-│   │   ├── AnnouncementList.tsx
-│   │   ├── CatalogTable.tsx
-│   │   └── CommunityFeed.tsx
-│   ├── catalog/
-│   │   ├── ProductCard.tsx
-│   │   ├── ProductGrid.tsx
-│   │   └── AvailabilityMap.tsx
-│   ├── showroom/
-│   │   ├── ShowroomMap.tsx
-│   │   └── ShowroomCard.tsx
-│   └── cs/
-│       ├── TicketForm.tsx
-│       ├── TicketList.tsx
-│       └── MessageThread.tsx
-├── types/
-│   └── index.ts                 # shared TypeScript types (matches schema)
-└── lib/
-    ├── prisma.ts                # already exists
-    ├── api-response.ts          # TODO: standardized response helper
-    ├── auth.ts                  # TODO: NextAuth config
-    ├── geo.ts                   # TODO: Haversine distance util
-    └── upload.ts                # TODO: file upload helper
-```
+| File | Status | Notes |
+|---|---|---|
+| `src/lib/prisma.ts` | ✅ Done | Singleton + pg adapter |
+| `src/lib/api-response.ts` | ✅ Done | `ok()`, `err()`, `paginated()` |
+| `src/lib/geo.ts` | ✅ Done | `haversineKm()` for showroom finder |
+| `src/lib/auth.ts` | ❌ Missing | NextAuth config, session callbacks |
+| `src/lib/upload.ts` | ❌ Missing | File upload helper (after storage provider chosen) |
+| `src/middleware.ts` | ❌ Missing | Route protection by role |
+| `src/types/index.ts` | ✅ Done | All shared TypeScript types |
 
 ---
 
 ## Open Questions for Client
 
-1. **Catalog ownership** — are products owned by DexHome platform (central) or by each mitra individually? Currently schema has `mitra_id` on `Product`.
-2. **Ordering flow** — does the customer order through the platform, or does the app just connect them to visit the showroom? `[CRITICAL — affects entire order flow]`
-3. **Payment** — if orders happen in-app, what payment gateways? (Midtrans? Xendit?)
-4. **Staff roles** — can one showroom have multiple `MITRA_USER` accounts? Who manages them?
-5. **Notifications** — email, SMS, in-app push, or all three?
-6. **Map provider** — is budget available for Google Maps API, or use free OSM?
-7. **Operating hours** — does each showroom have opening hours? Not in current schema.
+> These are blockers or near-blockers. Raise in next sync.
+
+1. **[CRITICAL] Ordering flow** — in-app checkout or showroom-visit only? Affects entire Phase 2 order API.
+2. **[CRITICAL] Payment gateway** — Midtrans or Xendit (if ordering is in-app)?
+3. **Catalog ownership** — products tied to one mitra, or can one product be stocked by multiple mitras? (Current schema: `product.mitraId` = single owner; `StockPerShowroom` = multi-showroom stock. Confirm this is correct.)
+4. **Staff management** — can `MITRA_ADMIN` invite/remove `MITRA_USER` accounts from the app UI, or is that handled by Center Admin only?
+5. **Notifications** — email, SMS (Twilio/Vonage), in-app push, or which combination?
+6. **Map provider** — budget for Google Maps API, or use free OpenStreetMap?
+7. **Storage provider** — Supabase Storage (easier if on Supabase) or separate (Cloudflare R2)?
+8. **Operating hours** — does each showroom need opening hours? Not currently in schema — needs `MitraProfile.operatingHours` or a separate table.
+9. **Tier thresholds** — what total spend/points moves a customer from Silver → Gold → Platinum? Needed to implement tier upgrade logic.
+10. **Product reviews** — only after a verified purchase, or open to anyone?
 
 ---
 
@@ -228,8 +258,8 @@ src/
 
 - [ ] Clone repo
 - [ ] `npm install` (or `bun install`)
-- [ ] Copy `.env.example` → `.env` and fill in values
-- [ ] Set up a Supabase or Neon project, get `DATABASE_URL`
-- [ ] `npx prisma migrate dev` (after schema is complete)
+- [ ] Create Supabase or Neon project → copy connection string
+- [ ] `cp .env.example .env` → fill `DATABASE_URL` and `NEXTAUTH_SECRET`
+- [ ] `npx prisma migrate dev --name init`
 - [ ] `npm run dev`
-- [ ] Read `AGENTS.md` — **this is not standard Next.js**, read the docs in `node_modules/next/dist/docs/`
+- [ ] Read `AGENTS.md` — **this is not standard Next.js**, read `node_modules/next/dist/docs/` before touching routing or data fetching
