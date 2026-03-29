@@ -20,7 +20,8 @@
       "recommended": true,
       "a11y": {
         "noStaticElementInteractions": "off",
-        "useKeyWithClickEvents": "off"
+        "useKeyWithClickEvents": "off",
+        "noLabelWithoutControl": "off"
       },
       "suspicious": {
         "noUnknownAtRules": "off",
