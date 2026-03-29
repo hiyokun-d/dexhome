@@ -55,6 +55,7 @@ function Btn({ variant = "primary", sm, onClick, children }: {
   };
   return (
     <button
+      type="button"
       onClick={onClick}
       style={{
         padding: sm ? "5px 13px" : "8px 18px",
@@ -322,6 +323,7 @@ function Katalog() {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
         {chips.map((c) => (
           <button
+            type="button"
             key={c}
             onClick={() => setActiveChip(c)}
             style={{
@@ -346,7 +348,7 @@ function Katalog() {
             <Card key={panel.title} style={{ padding: "14px 16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: T.brown }}>{panel.title}</div>
-                <button style={{ fontSize: 10, color: T.muted, background: "none", border: "none", cursor: "pointer" }}>Reset</button>
+                <button type="button" style={{ fontSize: 10, color: T.muted, background: "none", border: "none", cursor: "pointer" }}>Reset</button>
               </div>
               {panel.items.map((item, i) => (
                 <label key={item} style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8, cursor: "pointer" }}>
@@ -377,7 +379,7 @@ function Katalog() {
               <div style={{ height: 160, background: `linear-gradient(135deg, ${T.bg}, #E8D5B0)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 56, position: "relative" }}>
                 {p.icon}
                 {p.badge && <span style={{ position: "absolute", top: 8, left: 8, padding: "2px 8px", borderRadius: 100, background: T.terra, color: "#fff", fontSize: 9, fontWeight: 700 }}>{p.badge}</span>}
-                <button style={{ position: "absolute", top: 8, right: 8, width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,.9)", border: "none", cursor: "pointer", fontSize: 14 }}>♡</button>
+                <button type="button" style={{ position: "absolute", top: 8, right: 8, width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,.9)", border: "none", cursor: "pointer", fontSize: 14 }}>♡</button>
               </div>
               <div style={{ padding: "12px 14px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
@@ -432,7 +434,7 @@ function Showroom() {
           {/* Map controls */}
           <div style={{ position: "absolute", bottom: 14, right: 14, display: "flex", flexDirection: "column", gap: 4 }}>
             {["+","−","📍"].map((c) => (
-              <button key={c} style={{ width: 34, height: 34, background: "#fff", border: "none", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,.1)", fontSize: 14, cursor: "pointer" }}>{c}</button>
+              <button type="button" key={c} style={{ width: 34, height: 34, background: "#fff", border: "none", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,.1)", fontSize: 14, cursor: "pointer" }}>{c}</button>
             ))}
           </div>
         </div>
@@ -597,7 +599,7 @@ function CustomerService() {
                 style={{ flex: 1, border: "none", outline: "none", background: "none", resize: "none", fontSize: 13, lineHeight: 1.5, maxHeight: 100, color: T.char }}
                 rows={1}
               />
-              <button style={{ width: 32, height: 32, borderRadius: 8, background: T.brown, border: "none", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>→</button>
+              <button type="button" style={{ width: 32, height: 32, borderRadius: 8, background: T.brown, border: "none", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>→</button>
             </div>
           </div>
         </Card>
@@ -665,6 +667,7 @@ export default function CustomerPortal() {
           <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.28)", letterSpacing: ".1em", textTransform: "uppercase", padding: "0 12px", margin: "12px 0 6px" }}>Menu Utama</div>
           {navItems.map((item) => (
             <button
+              type="button"
               key={item.id}
               onClick={() => { setActive(item.id); setSidebarOpen(false); }}
               className="nav-item"
@@ -682,7 +685,7 @@ export default function CustomerPortal() {
 
           <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.28)", letterSpacing: ".1em", textTransform: "uppercase", padding: "0 12px", margin: "14px 0 6px" }}>Akun</div>
           {comingSoon.map((item) => (
-            <button key={item.label} className="nav-item" style={{ color: "rgba(255,255,255,.5)" }}>
+            <button type="button" key={item.label} className="nav-item" style={{ color: "rgba(255,255,255,.5)" }}>
               <span style={{ fontSize: 17, width: 20, textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
               {item.label}
             </button>
@@ -690,7 +693,7 @@ export default function CustomerPortal() {
         </nav>
 
         <div style={{ padding: "10px", borderTop: "1px solid rgba(255,255,255,.07)" }}>
-          <button className="nav-item" style={{ color: "rgba(255,255,255,.5)" }}>
+          <button type="button" className="nav-item" style={{ color: "rgba(255,255,255,.5)" }}>
             <span style={{ fontSize: 17, width: 20, textAlign: "center" }}>🚪</span>Keluar
           </button>
         </div>
@@ -698,17 +701,17 @@ export default function CustomerPortal() {
 
       {/* Topbar */}
       <header className="portal-topbar" style={{ background: "rgba(253,250,245,.95)", borderBottom: `1px solid ${T.border}` }}>
-        <button className="ham-btn" onClick={() => setSidebarOpen(true)} style={{ width: 36, height: 36, borderRadius: 8, background: "none", border: `1.5px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 18, color: T.brown }}>☰</button>
+        <button type="button" className="ham-btn" onClick={() => setSidebarOpen(true)} style={{ width: 36, height: 36, borderRadius: 8, background: "none", border: `1.5px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 18, color: T.brown }}>☰</button>
         <div style={{ fontFamily: "var(--font-playfair, serif)", fontSize: 18, fontWeight: 700, color: T.brown }}>{titles[active]}</div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
           <div className="search-bar" style={{ background: T.bg, border: `1.5px solid ${T.border}` }}>
             <span style={{ color: T.muted, fontSize: 14 }}>🔍</span>
             <input placeholder="Cari produk, pesanan..." style={{ color: T.char, fontSize: 13 }} />
           </div>
-          <button className="icon-btn" style={{ background: T.bg, border: `1.5px solid ${T.border}`, color: T.brown }}>
+          <button type="button" className="icon-btn" style={{ background: T.bg, border: `1.5px solid ${T.border}`, color: T.brown }}>
             🔔<div className="notif-dot" />
           </button>
-          <button className="icon-btn" style={{ background: T.bg, border: `1.5px solid ${T.border}`, color: T.brown }}>🛒</button>
+          <button type="button" className="icon-btn" style={{ background: T.bg, border: `1.5px solid ${T.border}`, color: T.brown }}>🛒</button>
         </div>
       </header>
 

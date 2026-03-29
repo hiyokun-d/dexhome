@@ -39,7 +39,7 @@ function Btn({ variant = "primary", sm, onClick, children }: { variant?: "primar
     gold: { background: T.gold, color: "#fff" },
     outline: { background: "none", border: `1.5px solid ${T.border}`, color: T.brown },
   };
-  return <button onClick={onClick} style={{ padding: sm ? "5px 12px" : "8px 18px", borderRadius: 9, fontSize: sm ? 11 : 12, fontWeight: 600, cursor: "pointer", transition: "all .2s", border: "none", display: "inline-flex", alignItems: "center", gap: 6, ...styles[variant] }}>{children}</button>;
+  return <button type="button" onClick={onClick} style={{ padding: sm ? "5px 12px" : "8px 18px", borderRadius: 9, fontSize: sm ? 11 : 12, fontWeight: 600, cursor: "pointer", transition: "all .2s", border: "none", display: "inline-flex", alignItems: "center", gap: 6, ...styles[variant] }}>{children}</button>;
 }
 
 // ── Announcements ──────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ function Announcements() {
       {/* Filter Tabs */}
       <div className="filter-tabs">
         {tabs.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{
+          <button type="button" key={tab} onClick={() => setActiveTab(tab)} style={{
             padding: "6px 16px", borderRadius: 100, fontSize: 12, fontWeight: activeTab === tab ? 600 : 500, cursor: "pointer", transition: "all .2s",
             border: `1.5px solid ${activeTab === tab ? T.brown : T.border}`,
             background: activeTab === tab ? T.brown : T.card,
@@ -305,9 +305,9 @@ function Community() {
               {post.tags.map(t => <span key={t} style={{ padding: "2px 9px", borderRadius: 100, background: T.goldP, border: `1px solid ${T.gold}30`, color: T.gold, fontSize: 10, fontWeight: 600 }}>{t}</span>)}
             </div>
             <div style={{ display: "flex", gap: 14, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
-              <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.muted, display: "flex", alignItems: "center", gap: 5 }}>👍 {post.likes}</button>
-              <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.muted, display: "flex", alignItems: "center", gap: 5 }}>💬 {post.replies} Balasan</button>
-              <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.muted }}>🔗 Bagikan</button>
+              <button type="button" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.muted, display: "flex", alignItems: "center", gap: 5 }}>👍 {post.likes}</button>
+              <button type="button" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.muted, display: "flex", alignItems: "center", gap: 5 }}>💬 {post.replies} Balasan</button>
+              <button type="button" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.muted }}>🔗 Bagikan</button>
             </div>
           </Card>
         ))}
@@ -363,6 +363,7 @@ export default function MitraPortal() {
           <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.25)", letterSpacing: ".1em", textTransform: "uppercase", padding: "0 10px", margin: "12px 0 5px" }}>Menu</div>
           {navItems.map(item => (
             <button
+              type="button"
               key={item.id}
               onClick={() => { setActive(item.id); setSidebarOpen(false); }}
               className="nav-item"
@@ -375,14 +376,14 @@ export default function MitraPortal() {
           ))}
           <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.25)", letterSpacing: ".1em", textTransform: "uppercase", padding: "0 10px", margin: "14px 0 5px" }}>Akun</div>
           {[["👤","Profil Mitra"],["📊","Laporan Penjualan"],["🎧","Hubungi Admin"]].map(([ico,lbl]) => (
-            <button key={lbl} className="nav-item" style={{ color: "rgba(255,255,255,.45)" }}>
+            <button type="button" key={lbl} className="nav-item" style={{ color: "rgba(255,255,255,.45)" }}>
               <span style={{ fontSize: 16, width: 18, textAlign: "center" }}>{ico}</span>{lbl}
             </button>
           ))}
         </nav>
 
         <div style={{ padding: "10px 8px", borderTop: "1px solid rgba(255,255,255,.07)" }}>
-          <button className="nav-item" style={{ color: "rgba(255,255,255,.45)" }}>
+          <button type="button" className="nav-item" style={{ color: "rgba(255,255,255,.45)" }}>
             <span style={{ fontSize: 16, width: 18, textAlign: "center" }}>🚪</span>Keluar
           </button>
         </div>
@@ -390,14 +391,14 @@ export default function MitraPortal() {
 
       {/* Topbar */}
       <header className="portal-topbar" style={{ background: "rgba(253,250,245,.97)", borderBottom: `1px solid ${T.border}` }}>
-        <button className="ham-btn" onClick={() => setSidebarOpen(true)} style={{ width: 36, height: 36, borderRadius: 8, background: "none", border: `1.5px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 17, color: T.brown }}>☰</button>
+        <button type="button" className="ham-btn" onClick={() => setSidebarOpen(true)} style={{ width: 36, height: 36, borderRadius: 8, background: "none", border: `1.5px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 17, color: T.brown }}>☰</button>
         <div style={{ fontFamily: "var(--font-playfair, serif)", fontSize: 17, fontWeight: 700, color: T.brown }}>{titles[active]}</div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 9 }}>
           <div className="search-bar" style={{ background: T.bg, border: `1.5px solid ${T.border}` }}>
             <span style={{ color: T.muted, fontSize: 13 }}>🔍</span>
             <input placeholder="Cari pengumuman, produk..." style={{ color: T.brown, fontSize: 12 }} />
           </div>
-          <button className="icon-btn" style={{ background: T.bg, border: `1.5px solid ${T.border}` }}>
+          <button type="button" className="icon-btn" style={{ background: T.bg, border: `1.5px solid ${T.border}` }}>
             🔔<div className="notif-dot" />
           </button>
         </div>

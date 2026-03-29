@@ -43,7 +43,7 @@ function Btn({ variant = "primary", sm, onClick, children }: { variant?: "primar
     red: { background: "rgba(196,87,42,.15)", color: T.terra, border: `1px solid rgba(196,87,42,.3)` },
     green: { background: "rgba(122,140,110,.15)", color: T.sage, border: `1px solid rgba(122,140,110,.3)` },
   };
-  return <button onClick={onClick} style={{ padding: sm ? "5px 12px" : "8px 18px", borderRadius: 8, fontSize: sm ? 11 : 12, fontWeight: 600, cursor: "pointer", transition: "all .2s", border: "none", display: "inline-flex", alignItems: "center", gap: 6, ...styles[variant] }}>{children}</button>;
+  return <button type="button" onClick={onClick} style={{ padding: sm ? "5px 12px" : "8px 18px", borderRadius: 8, fontSize: sm ? 11 : 12, fontWeight: 600, cursor: "pointer", transition: "all .2s", border: "none", display: "inline-flex", alignItems: "center", gap: 6, ...styles[variant] }}>{children}</button>;
 }
 
 function SectionHeader({ label, title, sub, action }: { label: string; title: string; sub?: string; action?: React.ReactNode }) {
@@ -388,7 +388,7 @@ function ProductList() {
           <input placeholder="Cari nama produk, SKU, brand..." style={{ border: "none", outline: "none", background: "none", fontSize: 12, color: T.txt, flex: 1 }} />
         </div>
         {["Semua","Aktif","Review","Nonaktif"].map((f, i) => (
-          <button key={f} style={{ padding: "6px 14px", borderRadius: 100, fontSize: 12, fontWeight: i === 0 ? 600 : 500, cursor: "pointer", border: `1.5px solid ${i === 0 ? T.gold : T.border}`, background: i === 0 ? T.goldP : "none", color: i === 0 ? T.gold : T.muted }}>
+          <button type="button" key={f} style={{ padding: "6px 14px", borderRadius: 100, fontSize: 12, fontWeight: i === 0 ? 600 : 500, cursor: "pointer", border: `1.5px solid ${i === 0 ? T.gold : T.border}`, background: i === 0 ? T.goldP : "none", color: i === 0 ? T.gold : T.muted }}>
             {f}
           </button>
         ))}
@@ -650,7 +650,7 @@ function CSAdmin() {
           <div style={{ fontFamily: "var(--font-playfair, serif)", fontSize: 16, fontWeight: 700, color: T.txt }}>Antrian Tiket</div>
           <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
             {["Semua","Terbuka","Dijawab","Selesai"].map((f, i) => (
-              <button key={f} style={{ padding: "4px 12px", borderRadius: 100, fontSize: 11, fontWeight: i === 0 ? 600 : 500, cursor: "pointer", border: `1px solid ${i === 0 ? T.gold : T.border}`, background: i === 0 ? T.goldP : "none", color: i === 0 ? T.gold : T.muted }}>
+              <button type="button" key={f} style={{ padding: "4px 12px", borderRadius: 100, fontSize: 11, fontWeight: i === 0 ? 600 : 500, cursor: "pointer", border: `1px solid ${i === 0 ? T.gold : T.border}`, background: i === 0 ? T.goldP : "none", color: i === 0 ? T.gold : T.muted }}>
                 {f}
               </button>
             ))}
@@ -827,6 +827,7 @@ export default function AdminPortal() {
               <div style={{ fontSize: 9, fontWeight: 700, color: T.muted2, letterSpacing: ".1em", textTransform: "uppercase", padding: "0 10px", margin: "12px 0 5px" }}>{group.label}</div>
               {group.items.map(item => (
                 <button
+                  type="button"
                   key={item.id}
                   onClick={() => { setActive(item.id); setSidebarOpen(false); }}
                   className="nav-item"
@@ -847,7 +848,7 @@ export default function AdminPortal() {
         </nav>
 
         <div style={{ padding: "10px 8px", borderTop: `1px solid ${T.border}` }}>
-          <button className="nav-item" style={{ color: T.muted }}>
+          <button type="button" className="nav-item" style={{ color: T.muted }}>
             <span style={{ fontSize: 16, width: 18, textAlign: "center" }}>🚪</span>Keluar
           </button>
         </div>
@@ -855,7 +856,7 @@ export default function AdminPortal() {
 
       {/* Topbar */}
       <header className="portal-topbar" style={{ background: `rgba(15,15,18,.95)`, borderBottom: `1px solid ${T.border}` }}>
-        <button className="ham-btn" onClick={() => setSidebarOpen(true)} style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 17, color: T.txt }}>☰</button>
+        <button type="button" className="ham-btn" onClick={() => setSidebarOpen(true)} style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 17, color: T.txt }}>☰</button>
         <div>
           <div style={{ fontSize: 16, fontWeight: 600, color: T.txt }}>{titles[active]}</div>
           <div style={{ fontSize: 11, color: T.muted }}>DexHome Admin <span style={{ color: T.muted2 }}>/</span> {titles[active]}</div>
@@ -865,10 +866,10 @@ export default function AdminPortal() {
             <span style={{ color: T.muted, fontSize: 13 }}>🔍</span>
             <input placeholder="Cari produk, mitra..." style={{ color: T.txt, fontSize: 12 }} />
           </div>
-          <button className="icon-btn" style={{ background: T.surf2, border: `1px solid ${T.border}`, color: T.txt }}>
+          <button type="button" className="icon-btn" style={{ background: T.surf2, border: `1px solid ${T.border}`, color: T.txt }}>
             🔔<div className="notif-dot" />
           </button>
-          <button className="icon-btn" style={{ background: T.surf2, border: `1px solid ${T.border}`, color: T.txt }}>📋</button>
+          <button type="button" className="icon-btn" style={{ background: T.surf2, border: `1px solid ${T.border}`, color: T.txt }}>📋</button>
           <Btn variant="primary" sm onClick={() => setActive("addprod")}>+ Produk Baru</Btn>
         </div>
       </header>

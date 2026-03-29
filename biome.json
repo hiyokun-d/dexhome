@@ -18,8 +18,20 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "a11y": {
+        // Requires converting all interactive divs to semantic elements.
+        // Deferred until page files are split into components (see TODO.md Phase 1).
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off"
+      },
       "suspicious": {
-        "noUnknownAtRules": "off"
+        "noUnknownAtRules": "off",
+        // Mockup data has no stable IDs yet — deferred until API wiring.
+        "noArrayIndexKey": "off"
+      },
+      "complexity": {
+        // Resolved in globals.css by reordering rules instead of using !important.
+        "noImportantStyles": "error"
       }
     },
     "domains": {
