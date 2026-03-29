@@ -8,19 +8,21 @@ jobs:
   request-review:
     name: Notify DevOps & Request Review
     runs-on: ubuntu-latest
-    # Skip draft PRs — only request when actually ready
-    if: github.event.pull_request.draft == false
+    # ${{ }} wrapper required — bare expressions aren't evaluated in if: fields
+    if: ${{ !github.event.pull_request.draft }}
 
     steps:
       - name: Request review from hiyokun-d
+        # continue-on-error: true so the comment step still runs even when this
+        # step throws (e.g. 422 Unprocessable Entity when author == reviewer,
+        # or when the reviewer is already assigned)
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const pr = context.payload.pull_request;
-            const author = pr.user.login;
+            const author = context.payload.pull_request.user.login;
 
-            // Don't request review from yourself
             if (author === 'hiyokun-d') {
               console.log('PR author is hiyokun-d — skipping self-review request.');
               return;
@@ -29,23 +31,22 @@ jobs:
             await github.rest.pulls.requestReviewers({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: pr.number,
+              pull_number: context.payload.pull_request.number,
               reviewers: ['hiyokun-d'],
             });
-
-            console.log(`Review requested from hiyokun-d on PR #${pr.number}`);
 
       - name: Post summary comment
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const pr = context.payload.pull_request;
-            const branch = pr.head.ref;
-            const base = pr.base.ref;
-            const filesChanged = pr.changed_files;
-            const additions = pr.additions;
-            const deletions = pr.deletions;
+            // Re-fetch the PR so changed_files/additions/deletions are populated.
+            // The `opened` event payload can have 0 for these before GitHub computes them.
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
 
             const body = [
               '## Review Requested',
@@ -54,9 +55,9 @@ jobs:
               '',
               '| | |',
               '|---|---|',
-              `| **Branch** | \`${branch}\` → \`${base}\` |`,
-              `| **Files changed** | ${filesChanged} |`,
-              `| **Lines** | +${additions} / -${deletions} |`,
+              `| **Branch** | \`${pr.head.ref}\` → \`${pr.base.ref}\` |`,
+              `| **Files changed** | ${pr.changed_files} |`,
+              `| **Lines** | +${pr.additions} / -${pr.deletions} |`,
               `| **Author** | @${pr.user.login} |`,
               '',
               '### Checklist for reviewer',
@@ -64,7 +65,7 @@ jobs:
               '- [ ] API routes follow `{ data, error, meta }` shape',
               '- [ ] No hardcoded secrets or credentials',
               '- [ ] Role-based access is enforced (middleware / API guards)',
-              '- [ ] Biome lint and TypeScript checks pass (see CI)',
+              '- [ ] Biome lint and build checks pass (see CI)',
               '- [ ] No `any` types introduced without justification',
               '- [ ] New components extracted (no growing monolithic pages)',
             ].join('\n');
