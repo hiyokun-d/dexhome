@@ -1,3 +1,15 @@
+type BtnVariant = "primary" | "gold" | "outline";
+
+const variantMap: Record<BtnVariant, React.CSSProperties> = {
+  primary: { background: "#2C1810", color: "#fff", border: "none" },
+  gold: { background: "#C9962A", color: "#fff", border: "none" },
+  outline: {
+    background: "transparent",
+    border: "1.5px solid #E2D8C8",
+    color: "#2C1810",
+  },
+};
+
 /*
  * just a <button> element
  * */
@@ -6,14 +18,17 @@ export function Btn({
   onClick,
   className,
   style,
+  variant,
   children,
 }: {
   sm?: boolean;
   onClick?: () => void;
-  className: string;
+  className?: string;
   children: React.ReactNode;
-  style: React.CSSProperties;
+  style?: React.CSSProperties;
+  variant?: BtnVariant;
 }) {
+  const variantStyle = variant ? variantMap[variant] : {};
   return (
     <button
       type="button"
@@ -29,6 +44,7 @@ export function Btn({
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
+        ...variantStyle,
         ...style,
       }}
       className={className}

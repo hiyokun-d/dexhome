@@ -1,8 +1,42 @@
-export function Sidebar() {
+"use client";
+
+type Section = "dashboard" | "katalog" | "showroom" | "cs";
+
+const T = {
+  gold: "#C9962A",
+};
+
+const navItems: { id: Section; icon: string; label: string; badge?: number }[] =
+  [
+    { id: "dashboard", icon: "🏠", label: "Dashboard" },
+    { id: "katalog", icon: "🛍️", label: "Katalog" },
+    { id: "showroom", icon: "🏬", label: "Showroom" },
+    { id: "cs", icon: "💬", label: "Customer Service", badge: 2 },
+  ];
+
+const comingSoon = [
+  { icon: "👤", label: "Profil Saya" },
+  { icon: "📦", label: "Pesanan Saya" },
+  { icon: "🛡️", label: "Garansi & Asuransi" },
+  { icon: "❤️", label: "Wishlist" },
+  { icon: "🎪", label: "Event" },
+];
+
+export function Sidebar({
+  active,
+  sidebarOpen,
+  setActive,
+  setSidebarOpen,
+}: {
+  active: Section;
+  sidebarOpen: boolean;
+  setActive: (s: Section) => void;
+  setSidebarOpen: (v: boolean) => void;
+}) {
   return (
     <aside
       className={`portal-sidebar${sidebarOpen ? " open" : ""}`}
-      style={{ background: T.brown }}
+      style={{ background: "#2C1810" }}
     >
       {/* Logo */}
       <div

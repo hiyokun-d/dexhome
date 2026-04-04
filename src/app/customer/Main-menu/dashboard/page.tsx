@@ -1,3 +1,23 @@
+import { Badge } from "@/components/Badge";
+import { Btn } from "@/components/Btn";
+import { Card } from "@/components/Card";
+
+const T = {
+  bg: "#F5F0E8",
+  warm: "#FDFAF5",
+  card: "#fff",
+  brown: "#2C1810",
+  brown2: "#3D2318",
+  gold: "#C9962A",
+  goldL: "#E8B84B",
+  goldP: "rgba(201,150,42,.10)",
+  terra: "#C4572A",
+  sage: "#7A8C6E",
+  muted: "#8A7F74",
+  border: "#E2D8C8",
+  char: "#1A1A1A",
+};
+
 export function Dashboard() {
   const kpis = [
     {

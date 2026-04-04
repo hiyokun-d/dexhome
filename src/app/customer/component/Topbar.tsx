@@ -1,4 +1,29 @@
-export function Topbar() {
+"use client";
+
+type Section = "dashboard" | "katalog" | "showroom" | "cs";
+
+const T = {
+  bg: "#F5F0E8",
+  brown: "#2C1810",
+  muted: "#8A7F74",
+  border: "#E2D8C8",
+  char: "#1A1A1A",
+};
+
+const titles: Record<Section, string> = {
+  dashboard: "Dashboard",
+  katalog: "Katalog",
+  showroom: "Showroom",
+  cs: "Customer Service",
+};
+
+export function Topbar({
+  active,
+  setSidebarOpen,
+}: {
+  active: Section;
+  setSidebarOpen: (v: boolean) => void;
+}) {
   return (
     <header
       className="portal-topbar"

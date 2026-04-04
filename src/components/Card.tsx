@@ -1,14 +1,11 @@
-import { HTMLAttributes } from "react";
+import { type HTMLAttributes } from "react";
 
 export function Card({
   style,
   className,
   children,
-}: {
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-  className?: string;
-}) {
+  ...rest
+}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       style={{
@@ -16,6 +13,7 @@ export function Card({
         ...style,
       }}
       className={className}
+      {...rest}
     >
       {children}
     </div>
