@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 // GET /api/users — fetch all users
 export async function GET() {
   const users = await prisma.user.findMany();
-  return Response.json(users);
+  return Response.json("We have it here!");
 }
 
 // POST /api/users — create a new user
