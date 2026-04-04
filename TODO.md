@@ -9,31 +9,31 @@
 
 ## Status Legend
 
-| Symbol | Meaning |
-|---|---|
-| `[ ]` | Not started |
-| `[~]` | In progress |
-| `[x]` | Done |
-| `[?]` | Blocked — needs client answer |
+| Symbol | Meaning                       |
+| ------ | ----------------------------- |
+| `[ ]`  | Not started                   |
+| `[~]`  | In progress                   |
+| `[x]`  | Done                          |
+| `[?]`  | Blocked — needs client answer |
 
 ---
 
 ## Phase 0 — Foundation (do this first)
 
 - [x] **Full Prisma schema** — 25 models, 18 enums in `prisma/schema.prisma`
-- [ ] **Database** — create a Supabase or Neon project, paste `DATABASE_URL` into `.env`
-- [ ] **First migration** — `npx prisma migrate dev --name init`
-- [ ] **Authentication** — implement NextAuth.js v5
+- [x] **Database** — create a Supabase or Neon project, paste `DATABASE_URL` into `.env`
+- [x] **First migration** — `npx prisma migrate dev --name init`
+- [~] **Authentication** — implement NextAuth.js v5
   - Login page: `/login` (unified, redirect by role after sign-in)
   - Session shape must carry: `{ id, email, role, profileId }`
   - Providers: email+password (credentials) + optional Google OAuth
-- [ ] **Middleware** — `src/middleware.ts` route guard
+- [~] **Middleware** — `src/middleware.ts` route guard
   - `/customer/*` → requires `CUSTOMER`
   - `/mitra/admin/*` → requires `MITRA_ADMIN`
   - `/mitra/*` → requires `MITRA_USER` or `MITRA_ADMIN`
   - `/admin/*` → requires `CENTER_ADMIN`
   - Unauthenticated → redirect to `/login`
-- [ ] **Environment file** — create `.env.example` with all required keys documented
+- [x] **Environment file** — create `.env.example` with all required keys documented
 
 ---
 
@@ -112,8 +112,8 @@
 
 ### Catalog API
 
-- [ ] `GET  /api/catalog/products` — list with `?category=&search=&minPrice=&maxPrice=&page=`
-- [ ] `GET  /api/catalog/products/[id]` — product detail with images and variants
+- [x] `GET  /api/catalog/products` — list with `?category=&search=&minPrice=&maxPrice=&page=`
+- [x] `GET  /api/catalog/products/[id]` — product detail with images and variants
 - [ ] `GET  /api/catalog/products/[id]/availability` — `?lat=&lng=` → nearest `StockPerShowroom[]`
 - [ ] `GET  /api/catalog/categories` — category tree
 
@@ -225,15 +225,15 @@
 
 ## Shared Library TODOs
 
-| File | Status | Notes |
-|---|---|---|
-| `src/lib/prisma.ts` | ✅ Done | Singleton + pg adapter |
-| `src/lib/api-response.ts` | ✅ Done | `ok()`, `err()`, `paginated()` |
-| `src/lib/geo.ts` | ✅ Done | `haversineKm()` for showroom finder |
-| `src/lib/auth.ts` | ❌ Missing | NextAuth config, session callbacks |
-| `src/lib/upload.ts` | ❌ Missing | File upload helper (after storage provider chosen) |
-| `src/middleware.ts` | ❌ Missing | Route protection by role |
-| `src/types/index.ts` | ✅ Done | All shared TypeScript types |
+| File                      | Status     | Notes                                              |
+| ------------------------- | ---------- | -------------------------------------------------- |
+| `src/lib/prisma.ts`       | ✅ Done    | Singleton + pg adapter                             |
+| `src/lib/api-response.ts` | ✅ Done    | `ok()`, `err()`, `paginated()`                     |
+| `src/lib/geo.ts`          | ✅ Done    | `haversineKm()` for showroom finder                |
+| `src/lib/auth.ts`         | ❌ Missing | NextAuth config, session callbacks                 |
+| `src/lib/upload.ts`       | ❌ Missing | File upload helper (after storage provider chosen) |
+| `src/middleware.ts`       | ❌ Missing | Route protection by role                           |
+| `src/types/index.ts`      | ✅ Done    | All shared TypeScript types                        |
 
 ---
 
