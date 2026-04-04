@@ -1,6 +1,6 @@
 # DexHome — Developer TODO
 
-> **Last updated:** 2026-03-29
+> **Last updated:** 2026-04-05
 >
 > Living document. Work top-to-bottom — each phase unblocks the next.
 > Items marked `[?]` need client clarification before building.
@@ -45,19 +45,26 @@
 ### Layout (shared across all portals)
 
 - [ ] `src/components/layout/PortalShell.tsx` — sidebar + topbar wrapper
-- [ ] `src/components/layout/Sidebar.tsx` — nav items, active state, role-aware
-- [ ] `src/components/layout/Topbar.tsx` — search bar, notification bell, user avatar
+- [~] `src/components/layout/Sidebar.tsx` — done for customer portal (`src/app/customer/component/Sidebar.tsx`); needs generalizing for other portals
+- [~] `src/components/layout/Topbar.tsx` — done for customer portal (`src/app/customer/component/Topbar.tsx`); needs generalizing for other portals
 
 ### UI Primitives (shared)
 
 - [ ] `src/components/ui/KpiCard.tsx` — metric + icon + trend pill
 - [ ] `src/components/ui/DataTable.tsx` — generic sortable table
-- [ ] `src/components/ui/Badge.tsx` — status colors per enum value
+- [x] `src/components/Badge.tsx` — color-aware badge (`color` prop: green/gold/red/blue)
+- [x] `src/components/Btn.tsx` — button with `variant` prop (primary/gold/outline)
+- [x] `src/components/Card.tsx` — card with box shadow, forwards all div props
+- [x] `src/components/SectionHeader.tsx` — label + title + optional action slot
 - [ ] `src/components/ui/Modal.tsx` — accessible dialog wrapper
 - [ ] `src/components/ui/FilterTabs.tsx` — tab strip with active indicator
 
 ### Customer Components
 
+> Customer portal has been split from one monolithic file into separate page files.
+> Full component extraction into `src/components/customer/` is still pending.
+
+- [x] Customer portal split: `dashboard/`, `katalog/`, `showroom/`, `customerService/` under `src/app/customer/Main-menu/`
 - [ ] `src/components/customer/PointsCard.tsx` — balance, tier badge, progress bar
 - [ ] `src/components/customer/OrderHistory.tsx` — order table with status tracking
 - [ ] `src/components/customer/VoucherGrid.tsx` — voucher cards (active/expiring/used)
@@ -65,7 +72,7 @@
 
 ### Catalog Components
 
-- [ ] `src/components/catalog/ProductCard.tsx` — image, name, price, wishlist toggle
+- [~] `src/components/catalog/ProductCard.tsx` — inline in `katalog/page.tsx`; wired to real API data (images, price, rating) — extract when needed
 - [ ] `src/components/catalog/ProductGrid.tsx` — responsive grid with filter sidebar
 - [ ] `src/components/catalog/AvailabilityMap.tsx` — nearest mitra list/map for product
 
@@ -92,6 +99,9 @@
 
 > Wire each portal section to real data. The UI mockups already show what's needed —
 > just replace hardcoded arrays with `fetch()` calls to these routes.
+>
+> **Note on route naming:** API routes currently live under `/api/item/` and `/api/users/`.
+> These will eventually be reorganized to match the paths below as more routes are added.
 
 ### Auth API
 
@@ -112,10 +122,10 @@
 
 ### Catalog API
 
-- [x] `GET  /api/catalog/products` — list with `?category=&search=&minPrice=&maxPrice=&page=`
-- [x] `GET  /api/catalog/products/[id]` — product detail with images and variants
-- [ ] `GET  /api/catalog/products/[id]/availability` — `?lat=&lng=` → nearest `StockPerShowroom[]`
-- [ ] `GET  /api/catalog/categories` — category tree
+- [x] `GET  /api/item` — paginated product list (`?page=&limit=&category=`), ACTIVE only, includes mitra name + category icon + cover image + avg rating
+- [x] `GET  /api/item/[id]` — product detail with images, variants, reviews (latest 10), mitra info
+- [x] `GET  /api/item/[id]/availability` — `StockPerShowroom[]` where quantity > 0, includes mitra lat/lng for distance calc
+- [x] `GET  /api/item/category` — list all categories; `?slug=<slug>` returns products in that category
 
 ### Showroom API
 
@@ -166,7 +176,10 @@
 - [ ] `GET  /api/admin/vouchers` — all vouchers
 - [ ] `POST /api/admin/vouchers` — create voucher
 - [ ] `PATCH /api/admin/vouchers/[id]` — edit/deactivate voucher
-- [ ] `GET  /api/admin/users` — all users (replace stub in `/api/users`)
+- [x] `GET  /api/users` — fixed (was returning a hardcoded string); proper select, try/catch
+- [x] `GET  /api/users/[id]` — fixed UUID id bug (`Number(id)` → `id`), proper select
+- [x] `PATCH /api/users/[id]` — fixed same UUID bug
+- [x] `DELETE /api/users/[id]` — fixed same UUID bug
 
 ---
 
@@ -214,12 +227,13 @@
 - [ ] `loading.tsx` skeleton screens for every portal section
 - [ ] `error.tsx` boundaries per route segment
 - [ ] `not-found.tsx` pages
-- [ ] All images through `next/image` (not `<img>`)
+- [ ] All images through `next/image` (not `<img>`) — katalog page currently uses `<img>`
 - [ ] Rate limiting on auth + upload endpoints
 - [ ] CSRF verification (check NextAuth v5 defaults)
 - [ ] Input sanitization on all user-submitted text
-- [ ] Pagination on all list endpoints (currently returns all rows)
-- [ ] Seed script (`prisma/seed.ts`) with realistic sample data for development
+- [x] Pagination on catalog list endpoint (`/api/item?page=&limit=`)
+- [ ] Pagination on remaining list endpoints (orders, vouchers, tickets, etc.)
+- [x] Seed script (`prisma/seed.ts`) — exists, has BigInt issue with TS target (minor, not blocking)
 
 ---
 
@@ -228,7 +242,7 @@
 | File                      | Status     | Notes                                              |
 | ------------------------- | ---------- | -------------------------------------------------- |
 | `src/lib/prisma.ts`       | ✅ Done    | Singleton + pg adapter                             |
-| `src/lib/api-response.ts` | ✅ Done    | `ok()`, `err()`, `paginated()`                     |
+| `src/lib/api-response.ts` | ✅ Done    | `ok()`, `err()`, `paginated()` — now used by all API routes |
 | `src/lib/geo.ts`          | ✅ Done    | `haversineKm()` for showroom finder                |
 | `src/lib/auth.ts`         | ❌ Missing | NextAuth config, session callbacks                 |
 | `src/lib/upload.ts`       | ❌ Missing | File upload helper (after storage provider chosen) |

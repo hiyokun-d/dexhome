@@ -60,10 +60,10 @@ export function Katalog() {
   ];
 
   useEffect(() => {
-    fetch("/api/item")
+    fetch("/api/item?limit=12")
       .then((r) => r.json())
-      .then((data) => {
-        setProducts(data);
+      .then(({ data }) => {
+        setProducts(data ?? []);
         setLoading(false);
       })
       .catch(() => {
