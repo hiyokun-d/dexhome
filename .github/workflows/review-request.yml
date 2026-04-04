@@ -12,6 +12,9 @@ jobs:
   request-review:
     name: Notify DevOps & Request Review
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
     # ${{ }} wrapper required — bare expressions aren't evaluated in if: fields
     if: ${{ !github.event.pull_request.draft }}
 
