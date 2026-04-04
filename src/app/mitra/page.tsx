@@ -1,5 +1,8 @@
 "use client";
 import { useState } from "react";
+import { Announcements } from "./announcement/page";
+import { KatalogMitra } from "./katalog/page";
+import { Community } from "./community/page";
 
 const T = {
   bg: "#F7F3EE",
