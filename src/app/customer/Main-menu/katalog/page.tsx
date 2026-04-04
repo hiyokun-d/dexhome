@@ -579,3 +579,5 @@ export function Katalog() {
     </div>
   );
 }
+
+export default Katalog;

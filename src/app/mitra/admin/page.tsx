@@ -1,5 +1,9 @@
 "use client";
 import { useState } from "react";
+import { Dashboard } from "./dashboard/page";
+import { StockManagement } from "./stockManagement/page";
+import { InputPoints } from "./inputPoints/page";
+import { AnnouncementsAdmin } from "./readAnnouncements/page";
 
 const T = {
   bg: "#13111A",

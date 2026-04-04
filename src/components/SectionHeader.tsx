@@ -1,10 +1,12 @@
 export function SectionHeader({
   label,
   title,
+  sub,
   action,
 }: {
   label: string;
   title: string;
+  sub?: string;
   action?: React.ReactNode;
 }) {
   return (
@@ -47,6 +49,9 @@ export function SectionHeader({
         >
           {title}
         </div>
+        {sub && (
+          <div style={{ fontSize: 11, opacity: 0.55, marginTop: 3 }}>{sub}</div>
+        )}
       </div>
       {action}
     </div>

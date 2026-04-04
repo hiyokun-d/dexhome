@@ -1,3 +1,27 @@
+import { Badge } from "@/components/Badge";
+import { Btn } from "@/components/Btn";
+import { Card } from "@/components/Card";
+import { SectionHeader } from "@/components/SectionHeader";
+
+const T = {
+  bg: "#0F0F12",
+  surf: "#18181D",
+  surf2: "#1E1E25",
+  surf3: "#24242C",
+  border: "rgba(255,255,255,.07)",
+  border2: "rgba(255,255,255,.12)",
+  txt: "#F0EDE8",
+  muted: "rgba(240,237,232,.45)",
+  muted2: "rgba(240,237,232,.25)",
+  gold: "#C9962A",
+  goldL: "#E8B84B",
+  goldP: "rgba(201,150,42,.12)",
+  terra: "#C4572A",
+  sage: "#7A8C6E",
+  blue: "#4A90D9",
+  purple: "#8B7CC8",
+};
+
 export function Overview() {
   const kpis = [
     {
@@ -551,3 +575,6 @@ export function Overview() {
     </div>
   );
 }
+
+
+export default Overview;

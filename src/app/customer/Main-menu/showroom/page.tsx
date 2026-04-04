@@ -294,3 +294,5 @@ export function Showroom() {
     </div>
   );
 }
+
+export default Showroom;
