@@ -533,3 +533,5 @@ export function CustomerService() {
     </div>
   );
 }
+
+export default CustomerService;

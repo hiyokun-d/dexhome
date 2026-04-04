@@ -1,3 +1,31 @@
+"use client";
+import { useState } from "react";
+import { Badge } from "@/components/Badge";
+import { Btn } from "@/components/Btn";
+import { Card } from "@/components/Card";
+import { SectionHeader } from "@/components/SectionHeader";
+
+const T = {
+  bg: "#13111A",
+  surf: "#1B1825",
+  surf2: "#221F2E",
+  surf3: "#2A2638",
+  border: "rgba(255,255,255,.07)",
+  border2: "rgba(255,255,255,.13)",
+  txt: "#EDE8F5",
+  muted: "rgba(237,232,245,.45)",
+  muted2: "rgba(237,232,245,.22)",
+  purple: "#8B7CC8",
+  purpleL: "#A898E0",
+  purpleP: "rgba(139,124,200,.12)",
+  gold: "#C9962A",
+  goldL: "#E8B84B",
+  goldP: "rgba(201,150,42,.10)",
+  terra: "#C4572A",
+  sage: "#7A8C6E",
+  blue: "#4A90D9",
+};
+
 export function StockManagement() {
   const [stocks, setStocks] = useState([
     {
@@ -325,3 +353,5 @@ export function StockManagement() {
     </div>
   );
 }
+
+export default StockManagement;

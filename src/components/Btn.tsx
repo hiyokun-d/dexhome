@@ -1,4 +1,4 @@
-type BtnVariant = "primary" | "gold" | "outline";
+type BtnVariant = "primary" | "gold" | "outline" | "dark" | "red" | "green";
 
 const variantMap: Record<BtnVariant, React.CSSProperties> = {
   primary: { background: "#2C1810", color: "#fff", border: "none" },
@@ -7,6 +7,21 @@ const variantMap: Record<BtnVariant, React.CSSProperties> = {
     background: "transparent",
     border: "1.5px solid #E2D8C8",
     color: "#2C1810",
+  },
+  dark: {
+    background: "#1E1E25",
+    color: "rgba(240,237,232,.65)",
+    border: "1px solid rgba(255,255,255,.1)",
+  },
+  red: {
+    background: "rgba(196,87,42,.15)",
+    color: "#C4572A",
+    border: "1px solid rgba(196,87,42,.2)",
+  },
+  green: {
+    background: "rgba(122,140,110,.15)",
+    color: "#7A8C6E",
+    border: "1px solid rgba(122,140,110,.2)",
   },
 };
 

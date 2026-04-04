@@ -1,5 +1,13 @@
 "use client";
 import { useState } from "react";
+import { Btn } from "@/components/Btn";
+import { Overview } from "./overview/page";
+import { AddProduct } from "./addproduct/page";
+import { ProductList } from "./productList/page";
+import { MitraManagement } from "./mitraManagement/page";
+import { SendAnnouncement } from "./sendAnnoucemenet/page";
+import { CSAdmin } from "./CSAdmin/page";
+import { MitraMap } from "./mitraMap/page";
 
 const T = {
   bg: "#0F0F12",

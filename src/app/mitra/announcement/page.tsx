@@ -1,3 +1,26 @@
+"use client";
+import { useState } from "react";
+import { Badge } from "@/components/Badge";
+import { Btn } from "@/components/Btn";
+import { Card } from "@/components/Card";
+
+const T = {
+  bg: "#F7F3EE",
+  warm: "#FDFAF5",
+  card: "#fff",
+  brown: "#2C1810",
+  brown2: "#3D2318",
+  gold: "#C9962A",
+  goldL: "#E8B84B",
+  goldP: "rgba(201,150,42,.10)",
+  terra: "#C4572A",
+  sage: "#7A8C6E",
+  blue: "#4A90D9",
+  muted: "#8A7F74",
+  border: "#E2D8C8",
+  border2: "#D4C8B4",
+};
+
 export function Announcements() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("Semua");
@@ -364,3 +387,5 @@ export function Announcements() {
     </div>
   );
 }
+
+export default Announcements;
