@@ -12,9 +12,15 @@ export async function GET(
       images: {
         orderBy: { order: "asc" },
       },
-      reviews: {
-        orderBy: { order: "asc" },
-      },
+      // reviews: {
+      //   select: {
+      //     rating: true,
+      //     comment: true,
+      //     images: true,
+      //     createdAt: true,
+      //     verifiedPurchase: true,
+      //   },
+      // },
     },
   });
 
