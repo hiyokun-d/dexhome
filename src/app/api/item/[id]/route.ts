@@ -37,7 +37,7 @@ export async function GET(
 
     const avgRating =
       item.reviews.length
-        ? item.reviews.reduce((sum, r) => sum + r.rating, 0) / item.reviews.length
+        ? item.reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / item.reviews.length
         : null;
 
     return ok({ ...item, avgRating, reviewCount: item.reviews.length });

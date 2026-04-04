@@ -42,14 +42,14 @@ export async function GET(req: NextRequest) {
     ]);
 
     // compute avg rating per product in one extra query, grouped
-    const productIds = items.map((i) => i.id);
+    const productIds = items.map((i: { id: string }) => i.id);
     const ratings = await prisma.productReview.groupBy({
       by: ["productId"],
       where: { productId: { in: productIds } },
       _avg: { rating: true },
     });
     const ratingMap = Object.fromEntries(
-      ratings.map((r) => [r.productId, r._avg.rating]),
+      ratings.map((r: { productId: string; _avg: { rating: number | null } }) => [r.productId, r._avg.rating]),
     );
 
     const data = items.map(({ _count, ...item }) => ({

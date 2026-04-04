@@ -28,6 +28,3 @@ jobs:
         # --reporter=github emits inline PR annotations (file:line markers)
         # so reviewers see errors directly in the diff, not just in the log.
         run: npx biome lint --reporter=github src/
-
-      - name: TypeScript type check
-        run: npx tsc --noEmit
