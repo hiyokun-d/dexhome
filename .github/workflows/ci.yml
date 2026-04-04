@@ -7,8 +7,8 @@ on:
     branches: ["**"]
 
 jobs:
-  code-review:
-    name: Code Review
+  check:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
 
     steps:
@@ -25,8 +25,9 @@ jobs:
         run: npm ci
 
       - name: Biome lint
-        # Lint only — formatter diffs are not enforced in CI.
         # --reporter=github emits inline PR annotations (file:line markers)
         # so reviewers see errors directly in the diff, not just in the log.
-        # Run `npm run format` locally before committing to keep style clean.
         run: npx biome lint --reporter=github src/
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit

@@ -1,0 +1,140 @@
+name: TODO Sync
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Runs when a PR is MERGED into main.
+# Reads the PR title + body for "closes #todo: <item>" markers, then
+# marks matching [ ] items as [x] in TODO.md and commits the update.
+#
+# HOW TO TRIGGER FROM A PR:
+#   Include a line in your PR description like:
+#     closes #todo: Pagination on all list endpoints
+#   Or just list keywords that appear verbatim in TODO.md items:
+#     todo-done: Seed script, Biome lint
+#
+# REUSE: Copy this file as-is. Only TODO_FILE needs to change if your
+# TODO file has a different path.
+# ─────────────────────────────────────────────────────────────────────────────
+
+jobs:
+  sync-todo:
+    name: Mark completed TODO items
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.merged == true }}
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Parse PR and update TODO.md
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs   = require('fs');
+            const path = require('path');
+
+            // ── CONFIG ──────────────────────────────────────────────────
+            const TODO_FILE   = 'TODO.md';
+            const BOT_MARKER  = '<!-- todo-sync-bot -->';
+
+            // ── READ TODO ───────────────────────────────────────────────
+            let todo = fs.readFileSync(TODO_FILE, 'utf8');
+
+            // ── COLLECT COMPLETED ITEMS FROM PR ─────────────────────────
+            const pr     = context.payload.pull_request;
+            const source = `${pr.title}\n${pr.body ?? ''}`;
+
+            // Pattern 1 — explicit: "closes #todo: <text>"
+            const explicit = [...source.matchAll(/closes\s+#todo:\s*(.+)/gi)]
+              .map(m => m[1].trim());
+
+            // Pattern 2 — keyword list: "todo-done: item one, item two"
+            const keyword = [...source.matchAll(/todo-done:\s*(.+)/gi)]
+              .flatMap(m => m[1].split(',').map(s => s.trim()));
+
+            const completedItems = [...new Set([...explicit, ...keyword])];
+
+            if (completedItems.length === 0) {
+              console.log('No todo-done markers found in PR — nothing to update.');
+              return;
+            }
+
+            console.log('Items to mark done:', completedItems);
+
+            // ── MARK ITEMS ──────────────────────────────────────────────
+            // For each completed item, find the matching unchecked [ ] line
+            // in TODO.md by substring match (case-insensitive) and flip it.
+            let changed = false;
+            const matched = [];
+            const notFound = [];
+
+            for (const item of completedItems) {
+              const escaped = item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const re = new RegExp(`^(\\s*- )\\[ \\](.*${escaped}.*)$`, 'im');
+              if (re.test(todo)) {
+                todo = todo.replace(re, `$1[x]$2`);
+                matched.push(item);
+                changed = true;
+              } else {
+                notFound.push(item);
+              }
+            }
+
+            if (!changed) {
+              console.log('No matching unchecked items found — TODO.md unchanged.');
+              return;
+            }
+
+            // ── UPDATE LAST UPDATED DATE ────────────────────────────────
+            const today = new Date().toISOString().slice(0, 10);
+            todo = todo.replace(
+              /^(>\s*\*\*Last updated:\*\*\s*)[\d-]+/m,
+              `$1${today}`
+            );
+
+            fs.writeFileSync(TODO_FILE, todo);
+            console.log('Marked as done:', matched);
+            if (notFound.length) console.log('Not found (already done or typo?):', notFound);
+
+            // ── COMMIT ───────────────────────────────────────────────────
+            const { execSync } = require('child_process');
+            execSync('git config user.name  "github-actions[bot]"');
+            execSync('git config user.email "github-actions[bot]@users.noreply.github.com"');
+            execSync(`git add ${TODO_FILE}`);
+            execSync(`git commit -m "chore: mark TODO items done from PR #${pr.number}\n\n${matched.map(i => '- ' + i).join('\n')}"`);
+            execSync('git push');
+
+            // ── COMMENT ON PR ────────────────────────────────────────────
+            const { owner, repo } = context.repo;
+            const rows = [
+              ...matched.map(i  => `| ✅ | \`${i}\` | Marked done |`),
+              ...notFound.map(i => `| ⚠️ | \`${i}\` | Not found — already done or check spelling |`),
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body: [
+                BOT_MARKER,
+                '### 📋 TODO.md updated',
+                '',
+                '| | Item | Result |',
+                '|---|---|---|',
+                rows,
+                '',
+                `[View TODO.md](../../blob/main/TODO.md)`,
+              ].join('\n'),
+            });

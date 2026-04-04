@@ -1,77 +1,292 @@
-name: Request Review
+name: PR Review Assistant
 
 on:
   pull_request:
-    types: [opened, ready_for_review, reopened]
+    types: [opened, reopened, ready_for_review, synchronize]
 
 permissions:
   pull-requests: write
-  contents: read
   issues: write
+  contents: read
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HOW TO REUSE THIS IN ANOTHER REPO
+# 1. Copy this file into .github/workflows/review-request.yml
+# 2. Edit the CONFIG block inside the script step (REVIEWER, FILE_CATEGORIES,
+#    SIZE_LABELS, and the checklist sections)
+# 3. Enable "Read and write permissions" in repo Settings → Actions → General
+# That's it — no external actions needed beyond actions/github-script@v7
+# ─────────────────────────────────────────────────────────────────────────────
 
 jobs:
-  request-review:
-    name: Notify DevOps & Request Review
+  review-assist:
+    name: Review Assistant
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      pull-requests: write
+      issues: write
+      contents: read
 
     steps:
-      - name: Request review from hiyokun-d
-        continue-on-error: true
+      - name: Analyze PR & post review summary
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const author = context.payload.pull_request.user.login;
+            // ═══════════════════════════════════════════════════════════════
+            // CONFIG — edit this block when reusing in another repo
+            // ═══════════════════════════════════════════════════════════════
+            const REVIEWER = 'hiyokun-d';
 
-            if (author === 'hiyokun-d') {
-              console.log('PR author is hiyokun-d — skipping self-review request.');
-              return;
+            // Maps file path patterns → display label + auto-label tag.
+            // First match wins, so put more specific patterns first.
+            const FILE_CATEGORIES = [
+              { label: '🔌 API Routes',    pattern: /^src\/app\/api\//,        tag: 'api'      },
+              { label: '🗄️ Database',      pattern: /^prisma\//,               tag: 'database' },
+              { label: '🎨 Components',    pattern: /^src\/components\//,       tag: 'frontend' },
+              { label: '📄 Pages',         pattern: /^src\/app\//,              tag: 'frontend' },
+              { label: '🧪 Lib / Types',   pattern: /^src\/(lib|types)\//,      tag: 'lib'      },
+              { label: '⚙️ Config',        pattern: /\.(json|yml|yaml|env)$/,   tag: 'config'   },
+              { label: '📚 Docs',          pattern: /\.md$/,                    tag: 'docs'     },
+            ];
+
+            // PR size buckets — based on total lines changed (additions + deletions)
+            const SIZE_LABELS = [
+              { name: 'size/XS', max: 10,       color: '3CBF00' },
+              { name: 'size/S',  max: 50,        color: '5D9801' },
+              { name: 'size/M',  max: 250,       color: 'EEB800' },
+              { name: 'size/L',  max: 600,       color: 'EE8000' },
+              { name: 'size/XL', max: Infinity,  color: 'EE0000' },
+            ];
+
+            // ═══════════════════════════════════════════════════════════════
+            // FETCH PR DATA
+            // ═══════════════════════════════════════════════════════════════
+            const { owner, repo } = context.repo;
+            const pr_number = context.payload.pull_request.number;
+
+            const [{ data: pr }, { data: files }] = await Promise.all([
+              github.rest.pulls.get({ owner, repo, pull_number: pr_number }),
+              github.rest.pulls.listFiles({ owner, repo, pull_number: pr_number, per_page: 100 }),
+            ]);
+
+            // ═══════════════════════════════════════════════════════════════
+            // CATEGORIZE CHANGED FILES
+            // ═══════════════════════════════════════════════════════════════
+            const cats = {};
+            const tags = new Set();
+
+            for (const file of files) {
+              let matched = false;
+              for (const cat of FILE_CATEGORIES) {
+                if (cat.pattern.test(file.filename)) {
+                  if (!cats[cat.label]) cats[cat.label] = { files: [], added: 0, removed: 0 };
+                  cats[cat.label].files.push(file.filename);
+                  cats[cat.label].added   += file.additions;
+                  cats[cat.label].removed += file.deletions;
+                  tags.add(cat.tag);
+                  matched = true;
+                  break;
+                }
+              }
+              if (!matched) {
+                const key = '📦 Other';
+                if (!cats[key]) cats[key] = { files: [], added: 0, removed: 0 };
+                cats[key].files.push(file.filename);
+                cats[key].added   += file.additions;
+                cats[key].removed += file.deletions;
+              }
             }
 
-            await github.rest.pulls.requestReviewers({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              reviewers: ['hiyokun-d'],
-            });
+            // ═══════════════════════════════════════════════════════════════
+            // RISK LEVEL (based on what categories changed)
+            // ═══════════════════════════════════════════════════════════════
+            let risk, riskNote;
+            if (tags.has('database')) {
+              risk     = '🔴 HIGH';
+              riskNote = 'Schema or migration changed — review carefully before merging.';
+            } else if (tags.has('api')) {
+              risk     = '🟡 MEDIUM';
+              riskNote = 'API routes changed — verify response shapes and error handling.';
+            } else if (tags.has('config')) {
+              risk     = '🟡 MEDIUM';
+              riskNote = 'Config files changed — check for exposed secrets or broken CI.';
+            } else {
+              risk     = '🟢 LOW';
+              riskNote = 'Frontend / docs only — lower blast radius.';
+            }
 
-      - name: Post summary comment
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
+            // ═══════════════════════════════════════════════════════════════
+            // SIZE LABEL
+            // ═══════════════════════════════════════════════════════════════
+            const totalLines = pr.additions + pr.deletions;
+            const sizeLabel  = SIZE_LABELS.find(s => totalLines <= s.max);
+
+            // ═══════════════════════════════════════════════════════════════
+            // APPLY LABELS (create them first if they don't exist yet)
+            // ═══════════════════════════════════════════════════════════════
+            const tagColors = {
+              api: 'B60205', database: '0075CA', frontend: 'E4E669',
+              lib: 'D93F0B', config: 'FBCA04', docs: '0E8A16',
+            };
+
+            for (const tag of tags) {
+              await github.rest.issues.createLabel({
+                owner, repo, name: tag, color: tagColors[tag] ?? 'ededed'
+              }).catch(() => {});
+            }
+            await github.rest.issues.createLabel({
+              owner, repo, name: sizeLabel.name, color: sizeLabel.color
+            }).catch(() => {});
+
+            // Remove stale size/* labels then apply fresh set
+            const { data: existing } = await github.rest.issues.listLabelsOnIssue({
+              owner, repo, issue_number: pr_number
             });
+            for (const l of existing) {
+              if (l.name.startsWith('size/')) {
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number: pr_number, name: l.name
+                }).catch(() => {});
+              }
+            }
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: pr_number,
+              labels: [...tags, sizeLabel.name],
+            }).catch(() => {});
+
+            // ═══════════════════════════════════════════════════════════════
+            // REQUEST REVIEWER (skip if the author IS the reviewer)
+            // ═══════════════════════════════════════════════════════════════
+            if (pr.user.login !== REVIEWER) {
+              await github.rest.pulls.requestReviewers({
+                owner, repo, pull_number: pr_number, reviewers: [REVIEWER]
+              }).catch(() => {});
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // BUILD COMMENT
+            // ═══════════════════════════════════════════════════════════════
+
+            // — Files-by-category table —
+            const tableRows = Object.entries(cats)
+              .map(([label, d]) =>
+                `| ${label} | ${d.files.length} | \`+${d.added}\` | \`-${d.removed}\` |`
+              ).join('\n');
+
+            // — Collapsible full file list —
+            const fileDetail = Object.entries(cats)
+              .map(([label, d]) =>
+                `**${label}**\n` + d.files.map(f => `  - \`${f}\``).join('\n')
+              ).join('\n\n');
+
+            // — Dynamic checklist (only sections relevant to what changed) —
+            const checks = [];
+
+            if (tags.has('database')) checks.push(
+              '**🗄️ Database / Schema**',
+              '- [ ] Migration runs cleanly (`npx prisma migrate dev`)',
+              '- [ ] No breaking changes to existing columns without a data migration',
+              '- [ ] Foreign keys, indexes, and `onDelete` behavior are intentional',
+              '- [ ] Seed script updated if new required fields were added',
+            );
+
+            if (tags.has('api')) checks.push(
+              '**🔌 API Routes**',
+              '- [ ] All responses use `ok()` / `err()` / `paginated()` from `api-response.ts`',
+              '- [ ] Every route is wrapped in `try/catch` — no unhandled rejections',
+              '- [ ] List endpoints are paginated — no unbounded `findMany()` calls',
+              '- [ ] Only `select` the fields the client actually needs (no over-fetching)',
+              '- [ ] No N+1 queries — use nested `include`/`select`, not loops with separate queries',
+              '- [ ] No secrets, user data, or `passwordHash` leaked in responses',
+            );
+
+            if (tags.has('frontend')) checks.push(
+              '**🎨 Frontend / Components**',
+              '- [ ] No new inline styles that belong in a shared component',
+              '- [ ] Hardcoded mock data replaced with real API calls where applicable',
+              '- [ ] Loading state shown while fetching',
+              '- [ ] Error state handled (not just a silent failure)',
+              '- [ ] `"use client"` only on files that actually use hooks or event handlers',
+              '- [ ] No `<img>` — use `next/image` for optimized loading',
+            );
+
+            if (tags.has('lib')) checks.push(
+              '**🧪 Lib / Types**',
+              '- [ ] New types exported from `src/types/index.ts` if they are shared',
+              '- [ ] No `any` types introduced without a comment explaining why',
+              '- [ ] Helper functions are pure and tested mentally for edge cases',
+            );
+
+            if (tags.has('config')) checks.push(
+              '**⚙️ Config / Workflow**',
+              '- [ ] No secrets or credentials committed',
+              '- [ ] `.env.example` updated if new environment variables are required',
+              '- [ ] CI pipeline still passes after the config change',
+            );
+
+            // Always present
+            checks.push(
+              '**✅ Every PR**',
+              '- [ ] Biome lint passes locally (`npm run lint`)',
+              '- [ ] TypeScript compiles (`npx tsc --noEmit`)',
+              '- [ ] No `console.log` left in production code paths',
+              '- [ ] Branch is up to date with `main` before merging',
+            );
+
+            // — Assemble full comment —
+            const MARKER = '<!-- pr-review-assistant-v2 -->';
 
             const body = [
-              '## Review Requested',
+              MARKER,
+              `## 📋 PR Review — ${pr.title}`,
               '',
-              `@hiyokun-d — a new PR is ready for your review.`,
+              `> **Branch:** \`${pr.head.ref}\` → \`${pr.base.ref}\``,
+              `> **Author:** @${pr.user.login}`,
+              `> **Size:** ${sizeLabel.name.replace('size/', '')} · \`+${pr.additions} / -${pr.deletions}\` lines across ${files.length} file${files.length !== 1 ? 's' : ''}`,
+              `> **Risk:** ${risk} — ${riskNote}`,
               '',
-              '| | |',
-              '|---|---|',
-              `| **Branch** | \`${pr.head.ref}\` → \`${pr.base.ref}\` |`,
-              `| **Files changed** | ${pr.changed_files} |`,
-              `| **Lines** | +${pr.additions} / -${pr.deletions} |`,
-              `| **Author** | @${pr.user.login} |`,
+              '### 📦 Changed files by category',
               '',
-              '### Checklist for reviewer',
-              '- [ ] Schema / Prisma models are correct',
-              '- [ ] API routes follow `{ data, error, meta }` shape',
-              '- [ ] No hardcoded secrets or credentials',
-              '- [ ] Role-based access is enforced (middleware / API guards)',
-              '- [ ] Biome lint and build checks pass (see CI)',
-              '- [ ] No `any` types introduced without justification',
-              '- [ ] New components extracted (no growing monolithic pages)',
+              '| Category | Files | Added | Removed |',
+              '|---|---|---|---|',
+              tableRows,
+              '',
+              '<details>',
+              '<summary>📂 Full file list</summary>',
+              '',
+              fileDetail,
+              '',
+              '</details>',
+              '',
+              '---',
+              '',
+              '### ✅ Review checklist',
+              '',
+              checks.join('\n'),
+              '',
+              '---',
+              '',
+              `*Updated automatically on every push · ${new Date().toUTCString()}*`,
             ].join('\n');
 
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr.number,
-              body,
+            // ═══════════════════════════════════════════════════════════════
+            // POST OR UPDATE COMMENT (update in-place on re-push, no spam)
+            // ═══════════════════════════════════════════════════════════════
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100
             });
+            const existingComment = comments.find(c => c.body?.includes(MARKER));
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existingComment.id, body
+              });
+              console.log(`Updated existing review comment #${existingComment.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: pr_number, body
+              });
+              console.log('Posted new review comment');
+            }
