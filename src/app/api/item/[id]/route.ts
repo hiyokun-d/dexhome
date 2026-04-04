@@ -12,6 +12,9 @@ export async function GET(
       images: {
         orderBy: { order: "asc" },
       },
+      reviews: {
+        orderBy: { order: "asc" },
+      },
     },
   });
 

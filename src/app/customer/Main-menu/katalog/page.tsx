@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { Card } from "@/components/Card";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -20,8 +20,34 @@ const T = {
   char: "#1A1A1A",
 };
 
+type ProductImage = { id: string; url: string; order: number };
+
+type Product = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  originalPrice: number | null;
+  pointsPerTxn: number;
+  memberDiscountPct: number;
+  status: string;
+  mitra: { showroomName: string };
+  category: { name: string; icon: string };
+  images: ProductImage[];
+  avgRating: number | null;
+  reviewCount: number;
+};
+
+function formatRupiah(n: number) {
+  return "Rp " + n.toLocaleString("id-ID");
+}
+
 export function Katalog() {
   const [activeChip, setActiveChip] = useState("Semua");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
   const chips = [
     "Semua",
     "🛋️ Ruang Tamu",
@@ -33,74 +59,18 @@ export function Katalog() {
     "🏷️ Promo",
   ];
 
-  const products = [
-    {
-      icon: "🛋️",
-      name: "Sofa Modular Scandinavian",
-      brand: "Homera Studio",
-      price: "Rp 8.500.000",
-      orig: "Rp 10.000.000",
-      pts: "+850",
-      rating: "4.9",
-      reviews: "128",
-      badge: "🏷️ Promo",
-    },
-    {
-      icon: "🛏️",
-      name: "Ranjang Platform Oak",
-      brand: "Woodcraft Co.",
-      price: "Rp 12.200.000",
-      orig: null,
-      pts: "+1.220",
-      rating: "4.8",
-      reviews: "84",
-      badge: null,
-    },
-    {
-      icon: "💡",
-      name: "Lampu Rattan Wabi-Sabi",
-      brand: "LuxeLight ID",
-      price: "Rp 1.250.000",
-      orig: "Rp 1.600.000",
-      pts: "+125",
-      rating: "4.7",
-      reviews: "256",
-      badge: "🏷️ Promo",
-    },
-    {
-      icon: "🍽️",
-      name: "Meja Makan Jati Solid",
-      brand: "Teak & Grain",
-      price: "Rp 5.800.000",
-      orig: null,
-      pts: "+580",
-      rating: "4.9",
-      reviews: "62",
-      badge: null,
-    },
-    {
-      icon: "🪞",
-      name: "Cermin Arch Brass",
-      brand: "MirrorMade",
-      price: "Rp 2.100.000",
-      orig: null,
-      pts: "+210",
-      rating: "4.6",
-      reviews: "41",
-      badge: null,
-    },
-    {
-      icon: "🪴",
-      name: "Pot Terracotta Minimalis",
-      brand: "Greenspace",
-      price: "Rp 380.000",
-      orig: "Rp 450.000",
-      pts: "+38",
-      rating: "4.8",
-      reviews: "310",
-      badge: "🏷️ Promo",
-    },
-  ];
+  useEffect(() => {
+    fetch("/api/item")
+      .then((r) => r.json())
+      .then((data) => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <div className="fade-up">
@@ -166,11 +136,7 @@ export function Katalog() {
             Menampilkan mitra terdekat dari lokasi Anda
           </div>
           <div
-            style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,.5)",
-              marginTop: 2,
-            }}
+            style={{ fontSize: 11, color: "rgba(255,255,255,.5)", marginTop: 2 }}
           >
             Produk diurutkan dari showroom terdekat untuk estimasi pengiriman
             terbaik
@@ -363,149 +329,252 @@ export function Katalog() {
         </div>
 
         {/* Product Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 16,
-          }}
-        >
-          {products.map((p) => (
-            <Card
-              key={p.name}
-              style={{
-                overflow: "hidden",
-                cursor: "pointer",
-                transition: "all .2s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLDivElement).style.transform =
-                  "translateY(-2px)";
-                (e.currentTarget as HTMLDivElement).style.boxShadow =
-                  "0 12px 40px rgba(44,24,16,.14)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLDivElement).style.transform = "";
-                (e.currentTarget as HTMLDivElement).style.boxShadow = "";
-              }}
-            >
-              <div
+        {loading ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 16,
+            }}
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card
+                key={i}
                 style={{
-                  height: 160,
-                  background: `linear-gradient(135deg, ${T.bg}, #E8D5B0)`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 56,
-                  position: "relative",
+                  overflow: "hidden",
+                  opacity: 0.5,
+                  animation: "pulse 1.5s ease-in-out infinite",
                 }}
               >
-                {p.icon}
-                {p.badge && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      left: 8,
-                      padding: "2px 8px",
-                      borderRadius: 100,
-                      background: T.terra,
-                      color: "#fff",
-                      fontSize: 9,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {p.badge}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  style={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    width: 30,
-                    height: 30,
-                    borderRadius: "50%",
-                    background: "rgba(255,255,255,.9)",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 14,
-                  }}
-                >
-                  ♡
-                </button>
-              </div>
-              <div style={{ padding: "12px 14px" }}>
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 2,
+                    height: 160,
+                    background: T.border,
                   }}
-                >
-                  <div style={{ fontSize: 11, color: T.muted }}>{p.brand}</div>
+                />
+                <div style={{ padding: "12px 14px" }}>
                   <div
                     style={{
-                      fontSize: 11,
-                      color: T.muted,
+                      height: 10,
+                      background: T.border,
+                      borderRadius: 4,
+                      marginBottom: 8,
+                      width: "60%",
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 14,
+                      background: T.border,
+                      borderRadius: 4,
+                      width: "80%",
+                    }}
+                  />
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : error ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 200,
+              color: T.muted,
+              fontSize: 14,
+            }}
+          >
+            Gagal memuat produk. Coba refresh halaman.
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 16,
+            }}
+          >
+            {products.map((p) => {
+              const hasDiscount = p.originalPrice !== null && p.originalPrice > p.price;
+              const coverImage = p.images[0]?.url ?? null;
+
+              return (
+                <Card
+                  key={p.id}
+                  style={{
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    transition: "all .2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.transform =
+                      "translateY(-2px)";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow =
+                      "0 12px 40px rgba(44,24,16,.14)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.transform = "";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = "";
+                  }}
+                >
+                  {/* Product image / placeholder */}
+                  <div
+                    style={{
+                      height: 160,
+                      background: `linear-gradient(135deg, ${T.bg}, #E8D5B0)`,
                       display: "flex",
                       alignItems: "center",
-                      gap: 3,
+                      justifyContent: "center",
+                      fontSize: 56,
+                      position: "relative",
+                      overflow: "hidden",
                     }}
                   >
-                    ⭐ {p.rating}{" "}
-                    <span style={{ color: T.border }}>({p.reviews})</span>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: T.brown,
-                    marginBottom: 8,
-                  }}
-                >
-                  {p.name}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{ fontSize: 15, fontWeight: 700, color: T.brown }}
+                    {coverImage ? (
+                      <img
+                        src={coverImage}
+                        alt={p.name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          position: "absolute",
+                          inset: 0,
+                        }}
+                      />
+                    ) : (
+                      p.category.icon
+                    )}
+
+                    {hasDiscount && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: 8,
+                          left: 8,
+                          padding: "2px 8px",
+                          borderRadius: 100,
+                          background: T.terra,
+                          color: "#fff",
+                          fontSize: 9,
+                          fontWeight: 700,
+                          zIndex: 1,
+                        }}
+                      >
+                        🏷️ Promo
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      style={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        width: 30,
+                        height: 30,
+                        borderRadius: "50%",
+                        background: "rgba(255,255,255,.9)",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: 14,
+                        zIndex: 1,
+                      }}
                     >
-                      {p.price}
-                    </div>
-                    {p.orig && (
+                      ♡
+                    </button>
+                  </div>
+
+                  <div style={{ padding: "12px 14px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: 2,
+                      }}
+                    >
+                      <div style={{ fontSize: 11, color: T.muted }}>
+                        {p.mitra.showroomName}
+                      </div>
                       <div
                         style={{
                           fontSize: 11,
                           color: T.muted,
-                          textDecoration: "line-through",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 3,
                         }}
                       >
-                        {p.orig}
+                        {p.avgRating !== null ? (
+                          <>
+                            ⭐ {p.avgRating.toFixed(1)}{" "}
+                            <span style={{ color: T.border }}>
+                              ({p.reviewCount})
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ color: T.border }}>Belum ada ulasan</span>
+                        )}
                       </div>
-                    )}
+                    </div>
                     <div
-                      style={{ fontSize: 10, color: T.sage, fontWeight: 600 }}
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: T.brown,
+                        marginBottom: 8,
+                      }}
                     >
-                      +{p.pts.replace("+", "")} poin
+                      {p.name}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <div>
+                        <div
+                          style={{
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: T.brown,
+                          }}
+                        >
+                          {formatRupiah(p.price)}
+                        </div>
+                        {hasDiscount && p.originalPrice && (
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: T.muted,
+                              textDecoration: "line-through",
+                            }}
+                          >
+                            {formatRupiah(p.originalPrice)}
+                          </div>
+                        )}
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: T.sage,
+                            fontWeight: 600,
+                          }}
+                        >
+                          +{p.pointsPerTxn} poin
+                        </div>
+                      </div>
+                      <Btn variant="primary" sm>
+                        + Keranjang
+                      </Btn>
                     </div>
                   </div>
-                  <Btn variant="primary" sm>
-                    + Keranjang
-                  </Btn>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
