@@ -35,6 +35,8 @@ export function Btn({
   style,
   variant,
   children,
+  type = "button",
+  disabled,
 }: {
   sm?: boolean;
   onClick?: () => void;
@@ -42,11 +44,14 @@ export function Btn({
   children: React.ReactNode;
   style?: React.CSSProperties;
   variant?: BtnVariant;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
 }) {
   const variantStyle = variant ? variantMap[variant] : {};
   return (
     <button
-      type="button"
+      type={type}
+      disabled={disabled}
       onClick={onClick}
       style={{
         padding: sm ? "5px 13px" : "8px 18px",

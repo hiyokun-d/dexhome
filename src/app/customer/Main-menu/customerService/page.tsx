@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Badge } from "@/components/Badge";
 import { Btn } from "@/components/Btn";
 import { Card } from "@/components/Card";
@@ -21,40 +21,362 @@ const T = {
   char: "#1A1A1A",
 };
 
-export function CustomerService() {
-  const tickets = [
-    {
-      id: "#TKT-0042",
-      title: "Pertanyaan tentang garansi Sofa Scandinavian",
-      status: "open" as const,
-      priority: "normal",
-      time: "2 jam lalu",
-      unread: 2,
-    },
-    {
-      id: "#TKT-0038",
-      title: "Konfirmasi jadwal pengiriman Cermin Arch",
-      status: "answered" as const,
-      priority: "normal",
-      time: "1 hari lalu",
-      unread: 0,
-    },
-    {
-      id: "#TKT-0031",
-      title: "Aktivasi asuransi produk Ranjang Oak King",
-      status: "resolved" as const,
-      priority: "normal",
-      time: "5 hari lalu",
-      unread: 0,
-    },
-  ];
+type DevCustomer = { id: string; fullName: string; membershipTier: string; user: { email: string } };
 
-  const [activeTicket, setActiveTicket] = useState(tickets[0].id);
-  const t = tickets.find((t) => t.id === activeTicket)!;
+type TicketStatus = "OPEN" | "ANSWERED" | "RESOLVED" | "CLOSED";
+
+type Ticket = {
+  id: string;
+  ticketNumber: string;
+  subject: string;
+  status: TicketStatus;
+  priority: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: { content: string; senderRole: string; createdAt: string }[];
+  _count: { messages: number };
+};
+
+type Message = {
+  id: string;
+  content: string;
+  senderRole: "CUSTOMER" | "AGENT";
+  attachmentUrl: string | null;
+  createdAt: string;
+  sender: { id: string; email: string };
+};
+
+type TicketDetail = Omit<Ticket, "messages" | "_count"> & {
+  messages: Message[];
+  resolvedAt: string | null;
+  assignedAgent: { id: string; email: string } | null;
+};
+
+function statusBadgeColor(s: TicketStatus) {
+  if (s === "OPEN") return "gold" as const;
+  if (s === "ANSWERED") return "blue" as const;
+  if (s === "RESOLVED") return "green" as const;
+  return "grey" as const;
+}
+
+function statusLabel(s: TicketStatus) {
+  if (s === "OPEN") return "🔄 Terbuka";
+  if (s === "ANSWERED") return "💬 Dijawab";
+  if (s === "RESOLVED") return "✅ Selesai";
+  return "🔒 Tutup";
+}
+
+function fmtTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
+
+function fmtRelative(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "baru saja";
+  if (m < 60) return `${m} menit lalu`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} jam lalu`;
+  return `${Math.floor(h / 24)} hari lalu`;
+}
+
+// ─── New Ticket Modal ────────────────────────────────────────────────────────
+function NewTicketModal({
+  customerId,
+  onClose,
+  onCreated,
+}: {
+  customerId: string;
+  onClose: () => void;
+  onCreated: (t: Ticket) => void;
+}) {
+  const [subject, setSubject] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (subject.trim().length < 5) {
+      setError("Judul minimal 5 karakter");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/customer/cs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId, subject: subject.trim() }),
+      });
+      const { data, error: apiErr } = await res.json();
+      if (apiErr) { setError(apiErr); return; }
+      onCreated(data);
+      onClose();
+    } catch {
+      setError("Gagal membuat tiket. Coba lagi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.45)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 100,
+      }}
+      onClick={onClose}
+    >
+      <Card
+        style={{ width: 440, padding: 28 }}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            fontFamily: "var(--font-playfair, serif)",
+            fontSize: 18,
+            fontWeight: 700,
+            color: T.brown,
+            marginBottom: 6,
+          }}
+        >
+          Buat Tiket Baru
+        </div>
+        <div style={{ fontSize: 12, color: T.muted, marginBottom: 20 }}>
+          Deskripsikan masalah Anda secara singkat.
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <label
+            style={{ fontSize: 12, fontWeight: 600, color: T.brown, display: "block", marginBottom: 6 }}
+          >
+            Subjek / Judul Tiket
+          </label>
+          <input
+            autoFocus
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Contoh: Pertanyaan tentang garansi sofa"
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              border: `1.5px solid ${error ? T.terra : T.border}`,
+              borderRadius: 9,
+              fontSize: 13,
+              outline: "none",
+              color: T.char,
+              marginBottom: 8,
+              boxSizing: "border-box",
+            }}
+          />
+          {error && (
+            <div style={{ fontSize: 11, color: T.terra, marginBottom: 10 }}>{error}</div>
+          )}
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
+            <Btn variant="outline" sm onClick={onClose} type="button">
+              Batal
+            </Btn>
+            <Btn variant="primary" sm type="submit" disabled={loading}>
+              {loading ? "Membuat…" : "Buat Tiket"}
+            </Btn>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+export function CustomerService() {
+  // TODO: replace with session.profileId once auth is wired
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [devCustomers, setDevCustomers] = useState<DevCustomer[]>([]);
+
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<TicketDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [msgText, setMsgText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // ── dev: load real customer IDs from seed ─────────────────────────────────
+  useEffect(() => {
+    fetch("/api/dev/customers")
+      .then((r) => r.json())
+      .then(({ data }) => {
+        if (data?.length) {
+          setDevCustomers(data);
+          setCustomerId(data[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // ── fetch ticket list ──────────────────────────────────────────────────────
+  const fetchTickets = useCallback(async () => {
+    if (!customerId) return;
+    setTicketsLoading(true);
+    try {
+      const res = await fetch(`/api/customer/cs?customerId=${customerId}`);
+      const { data } = await res.json();
+      setTickets(data ?? []);
+      if (!activeId && data?.length) setActiveId(data[0].id);
+    } catch {
+      // silently fail — list stays empty
+    } finally {
+      setTicketsLoading(false);
+    }
+  }, [customerId, activeId]);
+
+  useEffect(() => { fetchTickets(); }, [fetchTickets]);
+
+  // ── fetch ticket detail + messages ────────────────────────────────────────
+  useEffect(() => {
+    if (!activeId || !customerId) return;
+    setDetailLoading(true);
+    setDetail(null);
+    fetch(`/api/customer/cs/${activeId}?customerId=${customerId}`)
+      .then((r) => r.json())
+      .then(({ data }) => { if (data) setDetail(data); })
+      .catch(() => {})
+      .finally(() => setDetailLoading(false));
+  }, [activeId, customerId]);
+
+  // ── auto-scroll to bottom when messages change ─────────────────────────────
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [detail?.messages.length]);
+
+  // ── send message ──────────────────────────────────────────────────────────
+  async function sendMessage() {
+    if (!activeId || !customerId || !msgText.trim() || sending) return;
+    const text = msgText.trim();
+    setSending(true);
+    setMsgText("");
+    // optimistic update
+    const optimistic: Message = {
+      id: `opt-${Date.now()}`,
+      content: text,
+      senderRole: "CUSTOMER",
+      attachmentUrl: null,
+      createdAt: new Date().toISOString(),
+      sender: { id: customerId, email: "" },
+    };
+    setDetail((prev) => prev ? { ...prev, messages: [...prev.messages, optimistic] } : prev);
+
+    try {
+      const res = await fetch(`/api/customer/cs/${activeId}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId, content: text }),
+      });
+      const { data } = await res.json();
+      if (data) {
+        // replace optimistic with real message
+        setDetail((prev) =>
+          prev
+            ? { ...prev, messages: prev.messages.map((m) => m.id === optimistic.id ? data : m) }
+            : prev,
+        );
+        // refresh ticket list to update snippet + updatedAt
+        fetchTickets();
+      }
+    } catch {
+      // revert optimistic
+      setDetail((prev) =>
+        prev ? { ...prev, messages: prev.messages.filter((m) => m.id !== optimistic.id) } : prev,
+      );
+      setMsgText(text);
+    } finally {
+      setSending(false);
+      textareaRef.current?.focus();
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  const activeTicket = tickets.find((t) => t.id === activeId);
 
   return (
     <div className="fade-up">
       <SectionHeader label="Dukungan" title="Customer Service" />
+
+      {/* DEV ONLY — remove when auth is wired */}
+      {devCustomers.length > 0 && (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: "8px 14px",
+            background: "rgba(201,150,42,.08)",
+            border: `1px dashed ${T.gold}`,
+            borderRadius: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 11,
+            color: T.brown,
+          }}
+        >
+          <span style={{ fontWeight: 700, color: T.gold }}>DEV</span>
+          Customer:
+          <select
+            value={customerId ?? ""}
+            onChange={(e) => {
+              setCustomerId(e.target.value);
+              setTickets([]);
+              setActiveId(null);
+              setDetail(null);
+            }}
+            style={{
+              fontSize: 11,
+              border: `1px solid ${T.border}`,
+              borderRadius: 5,
+              padding: "2px 6px",
+              background: T.warm,
+              color: T.brown,
+            }}
+          >
+            {devCustomers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.fullName} ({c.user.email})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {showNewModal && customerId && (
+        <NewTicketModal
+          customerId={customerId}
+          onClose={() => setShowNewModal(false)}
+          onCreated={(t) => {
+            // normalise: newly created ticket has no messages yet
+            const normalised: Ticket = {
+              ...(t as unknown as Ticket),
+              messages: [],
+              _count: { messages: 0 },
+              updatedAt: t.createdAt,
+            };
+            setTickets((prev) => [normalised, ...prev]);
+            setActiveId(t.id);
+          }}
+        />
+      )}
 
       <div
         style={{
@@ -65,14 +387,8 @@ export function CustomerService() {
           minHeight: 500,
         }}
       >
-        {/* Ticket List */}
-        <Card
-          style={{
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+        {/* ── Ticket List ─────────────────────────────────────────────────── */}
+        <Card style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
           <div
             style={{
               padding: "14px 18px",
@@ -92,442 +408,477 @@ export function CustomerService() {
             >
               Tiket Saya
             </div>
-            <Btn variant="primary" sm>
+            <Btn variant="primary" sm onClick={() => setShowNewModal(true)}>
               + Buat Tiket
             </Btn>
           </div>
+
           <div style={{ flex: 1, overflow: "auto" }}>
-            {tickets.map((tk) => (
+            {ticketsLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: "14px 18px",
+                    borderBottom: `1px solid ${T.border}`,
+                    opacity: 0.4,
+                  }}
+                >
+                  <div style={{ height: 10, background: T.border, borderRadius: 4, width: "40%", marginBottom: 8 }} />
+                  <div style={{ height: 12, background: T.border, borderRadius: 4, width: "80%", marginBottom: 8 }} />
+                  <div style={{ height: 10, background: T.border, borderRadius: 4, width: "30%" }} />
+                </div>
+              ))
+            ) : tickets.length === 0 ? (
               <div
-                key={tk.id}
-                onClick={() => setActiveTicket(tk.id)}
                 style={{
-                  padding: "14px 18px",
-                  borderBottom: `1px solid ${T.border}`,
-                  cursor: "pointer",
-                  background: activeTicket === tk.id ? T.goldP : "transparent",
-                  borderLeft:
-                    activeTicket === tk.id
-                      ? `3px solid ${T.gold}`
-                      : "3px solid transparent",
-                  transition: "all .15s",
+                  padding: 32,
+                  textAlign: "center",
+                  color: T.muted,
+                  fontSize: 12,
                 }}
               >
-                <div
+                Belum ada tiket.
+                <br />
+                <button
+                  type="button"
+                  onClick={() => setShowNewModal(true)}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 4,
+                    marginTop: 10,
+                    fontSize: 12,
+                    color: T.gold,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: 600,
                   }}
                 >
-                  <span
+                  Buat tiket pertama →
+                </button>
+              </div>
+            ) : (
+              tickets.map((tk) => {
+                const lastMsg = tk.messages[0];
+                const unread =
+                  tk.status === "ANSWERED" ? 1 : 0; // simplified: badge when agent replied
+                return (
+                  <div
+                    key={tk.id}
+                    onClick={() => setActiveId(tk.id)}
                     style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: T.muted,
-                      fontFamily: "monospace",
+                      padding: "14px 18px",
+                      borderBottom: `1px solid ${T.border}`,
+                      cursor: "pointer",
+                      background: activeId === tk.id ? T.goldP : "transparent",
+                      borderLeft:
+                        activeId === tk.id
+                          ? `3px solid ${T.gold}`
+                          : "3px solid transparent",
+                      transition: "all .15s",
                     }}
                   >
-                    {tk.id}
-                  </span>
-                  <span style={{ fontSize: 10, color: T.muted }}>
-                    {tk.time}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: T.brown,
-                    marginBottom: 6,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {tk.title}
-                </div>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <Badge
-                    color={
-                      tk.status === "open"
-                        ? "gold"
-                        : tk.status === "answered"
-                          ? "blue"
-                          : "green"
-                    }
-                  >
-                    {tk.status === "open"
-                      ? "🔄 Terbuka"
-                      : tk.status === "answered"
-                        ? "💬 Dijawab"
-                        : "✅ Selesai"}
-                  </Badge>
-                  {tk.unread > 0 && (
-                    <span
+                    <div
                       style={{
-                        marginLeft: "auto",
-                        background: T.terra,
-                        color: "#fff",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        padding: "1px 7px",
-                        borderRadius: 100,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: 4,
                       }}
                     >
-                      {tk.unread}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: T.muted,
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        #{tk.ticketNumber}
+                      </span>
+                      <span style={{ fontSize: 10, color: T.muted }}>
+                        {fmtRelative(tk.updatedAt)}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: T.brown,
+                        marginBottom: 4,
+                        lineHeight: 1.4,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {tk.subject}
+                    </div>
+                    {lastMsg && (
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: T.muted,
+                          marginBottom: 6,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {lastMsg.senderRole === "AGENT" ? "🎧 " : "Anda: "}
+                        {lastMsg.content}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <Badge color={statusBadgeColor(tk.status)}>
+                        {statusLabel(tk.status)}
+                      </Badge>
+                      {unread > 0 && (
+                        <span
+                          style={{
+                            marginLeft: "auto",
+                            background: T.terra,
+                            color: "#fff",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            padding: "1px 7px",
+                            borderRadius: 100,
+                          }}
+                        >
+                          {unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
 
-        {/* Chat Window */}
-        <Card
-          style={{
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* Chat Header */}
-          <div
-            style={{
-              padding: "12px 20px",
-              borderBottom: `1px solid ${T.border}`,
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              background: T.warm,
-            }}
-          >
+        {/* ── Chat Window ─────────────────────────────────────────────────── */}
+        <Card style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          {!activeTicket ? (
             <div
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 9,
-                background: T.sage,
+                flex: 1,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 16,
-                flexShrink: 0,
-              }}
-            >
-              🎧
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: T.brown }}>
-                {t.title}
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: T.sage,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 3,
-                }}
-              >
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: T.sage,
-                    display: "inline-block",
-                  }}
-                />
-                CS Agent Online · Respons rata-rata &lt;5 menit
-              </div>
-            </div>
-            <Badge
-              color={
-                t.status === "open"
-                  ? "gold"
-                  : t.status === "answered"
-                    ? "blue"
-                    : "green"
-              }
-            >
-              {t.status === "open"
-                ? "🔄 Terbuka"
-                : t.status === "answered"
-                  ? "💬 Dijawab"
-                  : "✅ Selesai"}
-            </Badge>
-          </div>
-
-          {/* Messages */}
-          <div
-            style={{
-              flex: 1,
-              overflow: "auto",
-              padding: "20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              background: T.bg,
-            }}
-          >
-            {/* Date separator */}
-            <div
-              style={{
-                textAlign: "center",
-                fontSize: 10,
                 color: T.muted,
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
+                fontSize: 13,
               }}
             >
-              <div style={{ flex: 1, height: 1, background: T.border }} />
-              Hari ini, 15 Mar 2026
-              <div style={{ flex: 1, height: 1, background: T.border }} />
+              Pilih tiket untuk melihat percakapan
             </div>
-
-            {/* Customer message */}
-            <div
-              style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}
-            >
-              <div style={{ maxWidth: "70%" }}>
-                <div
-                  style={{
-                    background: T.brown,
-                    color: "#fff",
-                    padding: "10px 14px",
-                    borderRadius: "12px 12px 4px 12px",
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Halo, saya ingin menanyakan soal garansi Sofa Scandinavian
-                  yang baru saya beli. Apakah termasuk garansi rangka?
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: T.muted,
-                    textAlign: "right",
-                    marginTop: 4,
-                  }}
-                >
-                  09.15 · Terkirim ✓✓
-                </div>
-              </div>
+          ) : (
+            <>
+              {/* Chat Header */}
               <div
                 style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  background: T.gold,
+                  padding: "12px 20px",
+                  borderBottom: `1px solid ${T.border}`,
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#fff",
-                  flexShrink: 0,
-                  marginTop: 2,
+                  gap: 12,
+                  background: T.warm,
                 }}
               >
-                BS
-              </div>
-            </div>
-
-            {/* CS reply */}
-            <div style={{ display: "flex", gap: 10 }}>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  background: T.sage,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 14,
-                  flexShrink: 0,
-                  marginTop: 2,
-                }}
-              >
-                🎧
-              </div>
-              <div style={{ maxWidth: "70%" }}>
-                <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>
-                  CS Agent · Rina
-                </div>
                 <div
                   style={{
-                    background: T.card,
-                    border: `1px solid ${T.border}`,
-                    padding: "10px 14px",
-                    borderRadius: "4px 12px 12px 12px",
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                    color: T.brown,
+                    width: 36,
+                    height: 36,
+                    borderRadius: 9,
+                    background: T.sage,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 16,
+                    flexShrink: 0,
                   }}
                 >
-                  Halo Kak Budi! Sofa Scandinavian dari Homera Studio dilindungi
-                  garansi 24 bulan, termasuk rangka kayu dan per sofa. Untuk
-                  klaim garansi, Kak bisa langsung melalui menu Garansi &amp;
-                  Asuransi di portal ya 😊
+                  🎧
                 </div>
-                <div style={{ fontSize: 10, color: T.muted, marginTop: 4 }}>
-                  09.22
-                </div>
-              </div>
-            </div>
-
-            {/* Customer follow-up */}
-            <div
-              style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}
-            >
-              <div style={{ maxWidth: "70%" }}>
-                <div
-                  style={{
-                    background: T.brown,
-                    color: "#fff",
-                    padding: "10px 14px",
-                    borderRadius: "12px 12px 4px 12px",
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Baik terima kasih! Kalau sarung sofanya rusak, apakah bisa
-                  klaim juga?
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: T.muted,
-                    textAlign: "right",
-                    marginTop: 4,
-                  }}
-                >
-                  09.25 · Terkirim ✓✓
-                </div>
-              </div>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  background: T.gold,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#fff",
-                  flexShrink: 0,
-                  marginTop: 2,
-                }}
-              >
-                BS
-              </div>
-            </div>
-
-            {/* Typing indicator */}
-            <div style={{ display: "flex", gap: 10 }}>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  background: T.sage,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 14,
-                  flexShrink: 0,
-                }}
-              >
-                🎧
-              </div>
-              <div
-                style={{
-                  padding: "10px 14px",
-                  background: T.card,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: "4px 12px 12px 12px",
-                  display: "flex",
-                  gap: 4,
-                  alignItems: "center",
-                }}
-              >
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
                     style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: T.muted,
-                      display: "inline-block",
-                      animation: `bounce .8s ${i * 0.15}s infinite`,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: T.brown,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
                     }}
-                  />
-                ))}
+                  >
+                    {activeTicket.subject}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: T.sage,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 3,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: T.sage,
+                        display: "inline-block",
+                      }}
+                    />
+                    {detail?.assignedAgent
+                      ? `Ditangani CS Agent`
+                      : "Menunggu CS Agent"}{" "}
+                    · #{activeTicket.ticketNumber}
+                  </div>
+                </div>
+                <Badge color={statusBadgeColor(activeTicket.status)}>
+                  {statusLabel(activeTicket.status)}
+                </Badge>
               </div>
-            </div>
-          </div>
 
-          {/* Input */}
-          <div
-            style={{
-              padding: "12px 16px",
-              borderTop: `1px solid ${T.border}`,
-              background: T.warm,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-end",
-                gap: 8,
-                background: T.bg,
-                border: `1.5px solid ${T.border}`,
-                borderRadius: 12,
-                padding: "8px 12px",
-              }}
-            >
-              <textarea
-                placeholder="Ketik pesan Anda..."
+              {/* Messages */}
+              <div
                 style={{
                   flex: 1,
-                  border: "none",
-                  outline: "none",
-                  background: "none",
-                  resize: "none",
-                  fontSize: 13,
-                  lineHeight: 1.5,
-                  maxHeight: 100,
-                  color: T.char,
-                }}
-                rows={1}
-              />
-              <button
-                type="button"
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: T.brown,
-                  border: "none",
-                  color: "#fff",
-                  fontSize: 14,
-                  cursor: "pointer",
+                  overflow: "auto",
+                  padding: "20px",
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
+                  flexDirection: "column",
+                  gap: 14,
+                  background: T.bg,
                 }}
               >
-                →
-              </button>
-            </div>
-          </div>
+                {detailLoading ? (
+                  <div style={{ textAlign: "center", color: T.muted, fontSize: 12, paddingTop: 40 }}>
+                    Memuat percakapan…
+                  </div>
+                ) : !detail || detail.messages.length === 0 ? (
+                  <div style={{ textAlign: "center", color: T.muted, fontSize: 12, paddingTop: 40 }}>
+                    Belum ada pesan. Mulai percakapan di bawah.
+                  </div>
+                ) : (
+                  detail.messages.map((msg, idx) => {
+                    const isCustomer = msg.senderRole === "CUSTOMER";
+                    const prevMsg = detail.messages[idx - 1];
+                    const showDate =
+                      idx === 0 ||
+                      new Date(msg.createdAt).toDateString() !==
+                        new Date(prevMsg.createdAt).toDateString();
+
+                    return (
+                      <div key={msg.id}>
+                        {showDate && (
+                          <div
+                            style={{
+                              textAlign: "center",
+                              fontSize: 10,
+                              color: T.muted,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              marginBottom: 14,
+                            }}
+                          >
+                            <div style={{ flex: 1, height: 1, background: T.border }} />
+                            {new Date(msg.createdAt).toLocaleDateString("id-ID", {
+                              weekday: "long",
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })}
+                            <div style={{ flex: 1, height: 1, background: T.border }} />
+                          </div>
+                        )}
+
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 10,
+                            justifyContent: isCustomer ? "flex-end" : "flex-start",
+                          }}
+                        >
+                          {!isCustomer && (
+                            <div
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: 8,
+                                background: T.sage,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 14,
+                                flexShrink: 0,
+                                marginTop: 2,
+                              }}
+                            >
+                              🎧
+                            </div>
+                          )}
+
+                          <div style={{ maxWidth: "70%" }}>
+                            {!isCustomer && (
+                              <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>
+                                CS Agent
+                              </div>
+                            )}
+                            <div
+                              style={{
+                                background: isCustomer ? T.brown : T.card,
+                                color: isCustomer ? "#fff" : T.brown,
+                                border: isCustomer ? "none" : `1px solid ${T.border}`,
+                                padding: "10px 14px",
+                                borderRadius: isCustomer
+                                  ? "12px 12px 4px 12px"
+                                  : "4px 12px 12px 12px",
+                                fontSize: 13,
+                                lineHeight: 1.6,
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {msg.content}
+                            </div>
+                            {msg.attachmentUrl && (
+                              <a
+                                href={msg.attachmentUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: "block",
+                                  marginTop: 6,
+                                  fontSize: 11,
+                                  color: T.gold,
+                                  textDecoration: "none",
+                                }}
+                              >
+                                📎 Lampiran
+                              </a>
+                            )}
+                            <div
+                              style={{
+                                fontSize: 10,
+                                color: T.muted,
+                                textAlign: isCustomer ? "right" : "left",
+                                marginTop: 4,
+                              }}
+                            >
+                              {fmtTime(msg.createdAt)}
+                              {isCustomer && " · Terkirim"}
+                            </div>
+                          </div>
+
+                          {isCustomer && (
+                            <div
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: 8,
+                                background: T.gold,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: "#fff",
+                                flexShrink: 0,
+                                marginTop: 2,
+                              }}
+                            >
+                              Sy
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div
+                style={{
+                  padding: "12px 16px",
+                  borderTop: `1px solid ${T.border}`,
+                  background: T.warm,
+                }}
+              >
+                {activeTicket.status === "CLOSED" || activeTicket.status === "RESOLVED" ? (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      fontSize: 12,
+                      color: T.muted,
+                      padding: "10px 0",
+                    }}
+                  >
+                    Tiket ini telah {activeTicket.status === "CLOSED" ? "ditutup" : "diselesaikan"}.
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-end",
+                      gap: 8,
+                      background: T.bg,
+                      border: `1.5px solid ${T.border}`,
+                      borderRadius: 12,
+                      padding: "8px 12px",
+                    }}
+                  >
+                    <textarea
+                      ref={textareaRef}
+                      value={msgText}
+                      onChange={(e) => setMsgText(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Ketik pesan Anda… (Enter kirim, Shift+Enter baris baru)"
+                      style={{
+                        flex: 1,
+                        border: "none",
+                        outline: "none",
+                        background: "none",
+                        resize: "none",
+                        fontSize: 13,
+                        lineHeight: 1.5,
+                        maxHeight: 100,
+                        color: T.char,
+                      }}
+                      rows={1}
+                    />
+                    <button
+                      type="button"
+                      onClick={sendMessage}
+                      disabled={sending || !msgText.trim()}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        background:
+                          sending || !msgText.trim()
+                            ? T.border
+                            : T.brown,
+                        border: "none",
+                        color: sending || !msgText.trim() ? T.muted : "#fff",
+                        fontSize: 14,
+                        cursor:
+                          sending || !msgText.trim() ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        transition: "all .15s",
+                      }}
+                    >
+                      {sending ? "…" : "→"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </Card>
       </div>
     </div>

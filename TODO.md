@@ -1,6 +1,6 @@
 # DexHome — Developer TODO
 
-> **Last updated:** 2026-04-05
+> **Last updated:** 2026-04-14
 >
 > Living document. Work top-to-bottom — each phase unblocks the next.
 > Items marked `[?]` need client clarification before building.
@@ -52,8 +52,8 @@
 
 - [ ] `src/components/ui/KpiCard.tsx` — metric + icon + trend pill
 - [ ] `src/components/ui/DataTable.tsx` — generic sortable table
-- [x] `src/components/Badge.tsx` — color-aware badge (`color` prop: green/gold/red/blue)
-- [x] `src/components/Btn.tsx` — button with `variant` prop (primary/gold/outline)
+- [x] `src/components/Badge.tsx` — color-aware badge (`color` prop: green/gold/red/blue/grey/pur)
+- [x] `src/components/Btn.tsx` — button with `variant` prop (primary/gold/outline/dark/red/green), `type`, `disabled`
 - [x] `src/components/Card.tsx` — card with box shadow, forwards all div props
 - [x] `src/components/SectionHeader.tsx` — label + title + optional action slot
 - [ ] `src/components/ui/Modal.tsx` — accessible dialog wrapper
@@ -89,9 +89,11 @@
 
 ### Customer Service Components
 
-- [ ] `src/components/cs/TicketForm.tsx` — new ticket form with file upload
-- [ ] `src/components/cs/TicketList.tsx` — sortable ticket queue
-- [ ] `src/components/cs/MessageThread.tsx` — chat-style message view with attachments
+- [x] Customer CS chat UI — fully wired to API: ticket list, message thread, new ticket modal, optimistic send, auto-scroll (`src/app/customer/Main-menu/customerService/page.tsx`)
+- [x] Admin CS chat UI — dark purple theme, ticket queue with search/filter, agent reply, status actions (`src/app/admin/CSAdmin/page.tsx`)
+- [ ] Extract to `src/components/cs/TicketForm.tsx` — new ticket form with file upload
+- [ ] Extract to `src/components/cs/TicketList.tsx` — sortable ticket queue
+- [ ] Extract to `src/components/cs/MessageThread.tsx` — chat-style message view with attachments
 
 ---
 
@@ -110,14 +112,14 @@
 
 ### Customer API
 
-- [ ] `GET  /api/customer/dashboard` — points, tier, order stats, active vouchers, insurance summary
-- [ ] `GET  /api/customer/orders` — paginated order history with items
+- [x] `GET  /api/customer/dashboard` — points, tier, recent orders, active vouchers, counts
+- [x] `GET  /api/customer/orders` — paginated order history with items + variant + product image
 - [ ] `GET  /api/customer/orders/[id]` — single order detail
 - [ ] `GET  /api/customer/points` — paginated `PointTransaction[]`
-- [ ] `GET  /api/customer/vouchers` — claimed vouchers (active/used/expired)
+- [x] `GET  /api/customer/vouchers` — claimed vouchers (active/unused, excludes expired)
 - [ ] `POST /api/customer/vouchers/claim` — redeem voucher by code
-- [ ] `GET  /api/customer/wishlist` — wishlist items
-- [ ] `POST /api/customer/wishlist` — add to wishlist
+- [x] `GET  /api/customer/wishlist` — wishlist items with product image
+- [x] `POST /api/customer/wishlist` — toggle wishlist (add or remove, returns `{ wishlisted }`)
 - [ ] `DELETE /api/customer/wishlist/[productId]` — remove from wishlist
 
 ### Catalog API
@@ -132,13 +134,23 @@
 - [ ] `GET  /api/showrooms` — all `ACTIVE` mitra with lat/lng/city/name
 - [ ] `GET  /api/showrooms/[id]` — showroom detail + in-stock product count
 
-### CS API
+### CS API — Customer
 
-- [ ] `POST /api/cs/tickets` — create ticket (+ optional warranty claim)
-- [ ] `GET  /api/cs/tickets` — customer's own tickets (paginated)
-- [ ] `GET  /api/cs/tickets/[id]` — ticket + messages
-- [ ] `POST /api/cs/tickets/[id]/messages` — send a message
-- [ ] `POST /api/upload` — upload file, returns CDN URL
+- [x] `POST /api/customer/cs` — create ticket `{ customerId, subject }`
+- [x] `GET  /api/customer/cs` — customer's own tickets, paginated, with last-message snippet
+- [x] `GET  /api/customer/cs/[id]` — ticket + full message thread (ownership verified)
+- [x] `POST /api/customer/cs/[id]/message` — send message; bumps ANSWERED → OPEN
+
+### CS API — Admin
+
+- [x] `GET  /api/admin/cs` — all tickets, filterable by status + full-text search
+- [x] `GET  /api/admin/cs/[id]` — ticket detail + messages + customer info
+- [x] `PATCH /api/admin/cs/[id]` — update status (RESOLVED/CLOSED/OPEN) or assign agent
+- [x] `POST /api/admin/cs/[id]/reply` — agent reply → auto-sets ticket to ANSWERED
+
+### File Storage
+
+- [x] `POST /api/centralAdmin/upload` — multipart upload → Supabase S3, returns public URL; 8 MB limit, image types only
 
 ### Mitra User API
 
@@ -171,8 +183,8 @@
 - [ ] `DELETE /api/admin/products/[id]` — deactivate product
 - [ ] `GET  /api/admin/announcements` — all announcements with read counts
 - [ ] `POST /api/admin/announcements` — create and publish announcement
-- [ ] `GET  /api/admin/cs/tickets` — all tickets (agent view, filterable)
-- [ ] `PATCH /api/admin/cs/tickets/[id]` — assign agent, change status
+- [x] `GET  /api/admin/cs` — all tickets (agent view, filterable by status + search) — see CS API — Admin above
+- [x] `PATCH /api/admin/cs/[id]` — assign agent, change status — see CS API — Admin above
 - [ ] `GET  /api/admin/vouchers` — all vouchers
 - [ ] `POST /api/admin/vouchers` — create voucher
 - [ ] `PATCH /api/admin/vouchers/[id]` — edit/deactivate voucher
@@ -198,9 +210,10 @@
 
 ### File Storage — Uploads
 
-- [?] **Decide provider:** Supabase Storage (if using Supabase) or Cloudflare R2
-- [ ] `POST /api/upload` — validate file type (images: jpg/png/webp, docs: pdf), size limit 10MB, return CDN URL
-- [ ] Wire upload to: product images, CS ticket attachments, announcement attachments, showroom logo
+- [x] **Provider decided:** Supabase Storage (S3-compatible) — `src/lib/buckets-s3.ts`, bucket `products`
+- [x] `POST /api/centralAdmin/upload` — multipart, validates type + 8 MB, uploads to Supabase S3, returns `{ url, path }`
+- [ ] Wire upload to: CS ticket attachments, announcement attachments, showroom logo
+- [ ] Product image upload wired into admin product create/edit form
 
 ### Real-time — CS Chat & Notifications
 
@@ -245,7 +258,7 @@
 | `src/lib/api-response.ts` | ✅ Done    | `ok()`, `err()`, `paginated()` — now used by all API routes |
 | `src/lib/geo.ts`          | ✅ Done    | `haversineKm()` for showroom finder                |
 | `src/lib/auth.ts`         | ❌ Missing | NextAuth config, session callbacks                 |
-| `src/lib/upload.ts`       | ❌ Missing | File upload helper (after storage provider chosen) |
+| `src/lib/buckets-s3.ts`   | ✅ Done    | `getS3()`, `getPublicUrl()`, Supabase S3 client    |
 | `src/middleware.ts`       | ❌ Missing | Route protection by role                           |
 | `src/types/index.ts`      | ✅ Done    | All shared TypeScript types                        |
 
@@ -275,5 +288,6 @@
 - [ ] Create Supabase or Neon project → copy connection string
 - [ ] `cp .env.example .env` → fill `DATABASE_URL` and `NEXTAUTH_SECRET`
 - [ ] `npx prisma migrate dev --name init`
+- [ ] `npx prisma db seed` — seeds test users, mitra, products, tickets (password: `password123`)
 - [ ] `npm run dev`
 - [ ] Read `AGENTS.md` — **this is not standard Next.js**, read `node_modules/next/dist/docs/` before touching routing or data fetching

@@ -14,8 +14,9 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1030.0",
     "@prisma/adapter-pg": "^7.5.0",
-    "@prisma/client": "^7.5.0",
+    "@prisma/client": "^7.7.0",
     "animejs": "^4.3.6",
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.3.1",
@@ -32,7 +33,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
-    "prisma": "^7.5.0",
+    "prisma": "^7.7.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

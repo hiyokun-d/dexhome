@@ -1,3 +1,5 @@
+"use client";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/Badge";
 import { Btn } from "@/components/Btn";
 import { Card } from "@/components/Card";
@@ -16,159 +18,181 @@ const T = {
   muted: "#8A7F74",
   border: "#E2D8C8",
   char: "#1A1A1A",
+  blue: "#4A90D9",
 };
 
+// Tier thresholds (cumulative points) — update when client confirms
+const TIER_NEXT: Record<string, { label: string; target: number }> = {
+  SILVER: { label: "Gold", target: 5000 },
+  GOLD: { label: "Platinum", target: 10000 },
+  PLATINUM: { label: "", target: 0 },
+};
+
+type OrderStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "COMPLETED" | "CANCELLED" | "CLAIM";
+type BadgeColor = "green" | "gold" | "red" | "grey" | "blue";
+
+function orderBadge(s: OrderStatus): { color: BadgeColor; label: string } {
+  const m: Record<OrderStatus, { color: BadgeColor; label: string }> = {
+    COMPLETED:  { color: "green", label: "✓ Selesai" },
+    DELIVERED:  { color: "green", label: "✓ Diterima" },
+    SHIPPED:    { color: "gold",  label: "🚚 Dikirim" },
+    PROCESSING: { color: "gold",  label: "⚙️ Diproses" },
+    PENDING:    { color: "grey",  label: "⏳ Menunggu" },
+    CANCELLED:  { color: "red",   label: "✕ Dibatal" },
+    CLAIM:      { color: "red",   label: "↩ Klaim" },
+  };
+  return m[s] ?? { color: "grey", label: s };
+}
+
+function pointIcon(type: string) {
+  if (type === "BONUS")  return { ico: "🎁", bg: `rgba(74,144,217,.1)`,      color: T.blue };
+  if (type === "REDEEM") return { ico: "🎫", bg: `rgba(196,87,42,.1)`,       color: T.terra };
+  if (type === "EXPIRE") return { ico: "⚠️", bg: `rgba(196,87,42,.1)`,       color: T.terra };
+  if (type === "REFUND") return { ico: "↩",  bg: `rgba(122,140,110,.1)`,     color: T.sage };
+  return                        { ico: "⭐", bg: `rgba(201,150,42,.10)`,     color: T.sage };
+}
+
+function voucherDisplay(type: string, value: number) {
+  if (type === "FIXED_DISCOUNT")   return { icon: "🎫", val: `Rp ${value.toLocaleString("id-ID")}` };
+  if (type === "PERCENT_DISCOUNT") return { icon: "🏷️", val: `${value}%` };
+  if (type === "FREE_SHIPPING")    return { icon: "🚚", val: "Gratis Ongkir" };
+  if (type === "CASHBACK")         return { icon: "💎", val: `Cashback ${value}%` };
+  return { icon: "🎫", val: String(value) };
+}
+
+function fmtRupiah(n: number) {
+  return "Rp " + n.toLocaleString("id-ID");
+}
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+
+type DashboardData = {
+  id: string;
+  fullName: string;
+  membershipTier: "SILVER" | "GOLD" | "PLATINUM";
+  totalPoints: number;
+  tierExpiresAt: string | null;
+  avatarUrl: string | null;
+  orders: {
+    id: string;
+    orderNumber: string;
+    status: OrderStatus;
+    totalAmount: number;
+    createdAt: string;
+    mitra: { showroomName: string };
+    items: { product: { name: string; images: { url: string }[] } }[];
+  }[];
+  voucherClaims: {
+    voucher: { id: string; code: string; name: string; type: string; value: number; validUntil: string };
+  }[];
+  pointTransactions: {
+    id: string;
+    type: string;
+    amount: number;
+    description: string;
+    createdAt: string;
+  }[];
+  _count: { orders: number; reviews: number; warrantyClaims: number };
+};
+
+type DevCustomer = { id: string; fullName: string; user: { email: string } };
+
+// ── Skeleton block helper ────────────────────────────────────────────────────
+function Skel({ w = "100%", h = 12 }: { w?: string | number; h?: number }) {
+  return (
+    <div
+      style={{
+        width: w,
+        height: h,
+        background: T.border,
+        borderRadius: 4,
+        animation: "pulse 1.4s ease-in-out infinite",
+      }}
+    />
+  );
+}
+
 export function Dashboard() {
-  const kpis = [
-    {
-      icon: "⭐",
-      label: "Total Poin",
-      value: "4.820",
-      sub: "≈ Rp 48.200 · ↑ +320 bulan ini",
-      accent: T.gold,
-    },
-    {
-      icon: "🛍️",
-      label: "Total Belanja",
-      value: "Rp 34,7jt",
-      sub: "18 transaksi · 3 bulan ini",
-      accent: T.terra,
-    },
-    {
-      icon: "🎫",
-      label: "Voucher Aktif",
-      value: "3",
-      sub: "Exp: 31 Mar 2026",
-      accent: "#4A90D9",
-    },
-    {
-      icon: "🛡️",
-      label: "Produk Diasuransikan",
-      value: "4",
-      sub: "Semua aktif & terlindungi",
-      accent: T.sage,
-    },
-  ];
+  // TODO: replace with session.profileId once auth is wired
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [devCustomers, setDevCustomers] = useState<DevCustomer[]>([]);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const orders = [
-    {
-      icon: "🛋️",
-      name: "Sofa Scandinavian",
-      brand: "Homera Studio · #DXH-2603-0041",
-      price: "Rp 8.500.000",
-      pts: "+850",
-      status: "green" as const,
-      statusLabel: "✓ Selesai",
-    },
-    {
-      icon: "🪞",
-      name: "Cermin Arch",
-      brand: "MirrorMade · #DXH-2603-0039",
-      price: "Rp 2.100.000",
-      pts: "+210",
-      status: "gold" as const,
-      statusLabel: "🚚 Dikirim",
-    },
-    {
-      icon: "💡",
-      name: "Lampu Rattan",
-      brand: "LuxeLight ID · #DXH-2602-0031",
-      price: "Rp 1.250.000",
-      pts: "+125",
-      status: "green" as const,
-      statusLabel: "✓ Selesai",
-    },
-    {
-      icon: "🛏️",
-      name: "Ranjang Oak King",
-      brand: "Woodcraft Co. · #DXH-2601-0018",
-      price: "Rp 12.200.000",
-      pts: "+1.220",
-      status: "green" as const,
-      statusLabel: "✓ Selesai",
-    },
-    {
-      icon: "🍽️",
-      name: "Meja Makan Jati",
-      brand: "Teak & Grain · #DXH-2512-0009",
-      price: "Rp 5.800.000",
-      pts: "+580",
-      status: "red" as const,
-      statusLabel: "↩ Klaim",
-    },
-  ];
+  // dev: load seeded customers
+  useEffect(() => {
+    fetch("/api/dev/customers")
+      .then((r) => r.json())
+      .then(({ data: list }) => {
+        if (list?.length) { setDevCustomers(list); setCustomerId(list[0].id); }
+      })
+      .catch(() => {});
+  }, []);
 
-  const points = [
-    {
-      icon: "⭐",
-      type: "earn",
-      title: "Pembelian Sofa Scandinavian",
-      date: "15 Mar 2026",
-      val: "+850",
-    },
-    {
-      icon: "🎁",
-      type: "bonus",
-      title: "Bonus Check-in Bulanan",
-      date: "01 Mar 2026",
-      val: "+100",
-    },
-    {
-      icon: "🎫",
-      type: "redeem",
-      title: "Ditukar: Voucher Rp 50rb",
-      date: "25 Feb 2026",
-      val: "−500",
-    },
-    {
-      icon: "⭐",
-      type: "earn",
-      title: "Pembelian Cermin Arch",
-      date: "08 Mar 2026",
-      val: "+210",
-    },
-  ];
+  // fetch dashboard data when customer changes
+  useEffect(() => {
+    if (!customerId) return;
+    setLoading(true);
+    fetch(`/api/customer/dashboard?customerId=${customerId}`)
+      .then((r) => r.json())
+      .then(({ data: d }) => { if (d) setData(d); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [customerId]);
 
-  const vouchers = [
-    {
-      icon: "🎫",
-      name: "Diskon Member",
-      val: "Rp 50.000",
-      exp: "31 Mar 2026",
-      code: "DHGOLD50",
-    },
-    {
-      icon: "🚚",
-      name: "Gratis Ongkir",
-      val: "100%",
-      exp: "15 Apr 2026",
-      code: "DHFREE",
-    },
-    {
-      icon: "💎",
-      name: "Cashback Gold",
-      val: "10%",
-      exp: "30 Apr 2026",
-      code: "DHCB10",
-    },
-  ];
+  const tier = data?.membershipTier ?? "SILVER";
+  const tierInfo = TIER_NEXT[tier];
+  const points = data?.totalPoints ?? 0;
+  const progress = tierInfo.target > 0 ? Math.min(1, points / tierInfo.target) : 1;
+  const remaining = tierInfo.target > 0 ? Math.max(0, tierInfo.target - points) : 0;
+  const tierLabel = tier === "GOLD" ? "👑 Gold Member" : tier === "PLATINUM" ? "💎 Platinum Member" : "🥈 Silver Member";
+
+  const today = new Date().toLocaleDateString("id-ID", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+  const processingCount = data?.orders.filter((o) => o.status === "PROCESSING" || o.status === "SHIPPED").length ?? 0;
 
   return (
     <div className="fade-up">
-      {/* Greeting */}
-      <div style={{ marginBottom: 22 }}>
-        <h1
+      {/* DEV customer picker */}
+      {devCustomers.length > 0 && (
+        <div
           style={{
-            fontFamily: "var(--font-playfair, serif)",
-            fontSize: 28,
-            fontWeight: 700,
+            marginBottom: 16,
+            padding: "7px 14px",
+            background: T.goldP,
+            border: `1px dashed ${T.gold}`,
+            borderRadius: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 11,
             color: T.brown,
           }}
         >
-          Selamat Pagi, Budi! 👋
+          <span style={{ fontWeight: 700, color: T.gold }}>DEV</span>
+          Customer:
+          <select
+            value={customerId ?? ""}
+            onChange={(e) => { setCustomerId(e.target.value); setData(null); }}
+            style={{ fontSize: 11, border: `1px solid ${T.border}`, borderRadius: 5, padding: "2px 6px", background: T.warm, color: T.brown }}
+          >
+            {devCustomers.map((c) => (
+              <option key={c.id} value={c.id}>{c.fullName} ({c.user.email})</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Greeting */}
+      <div style={{ marginBottom: 22 }}>
+        <h1 style={{ fontFamily: "var(--font-playfair, serif)", fontSize: 28, fontWeight: 700, color: T.brown }}>
+          {loading || !data ? "Selamat Datang 👋" : `Selamat Datang, ${data.fullName.split(" ")[0]}! 👋`}
         </h1>
         <p style={{ fontSize: 14, color: T.muted, marginTop: 3 }}>
-          Kamis, 19 Maret 2026 · 2 pesanan sedang diproses
+          {today}{processingCount > 0 ? ` · ${processingCount} pesanan sedang diproses` : ""}
         </p>
       </div>
 
@@ -189,188 +213,109 @@ export function Dashboard() {
       >
         <div
           style={{
-            position: "absolute",
-            width: 220,
-            height: 220,
-            background:
-              "radial-gradient(circle,rgba(201,150,42,.2),transparent 70%)",
-            top: -60,
-            right: -40,
-            borderRadius: "50%",
-            pointerEvents: "none",
+            position: "absolute", width: 220, height: 220,
+            background: "radial-gradient(circle,rgba(201,150,42,.2),transparent 70%)",
+            top: -60, right: -40, borderRadius: "50%", pointerEvents: "none",
           }}
         />
         <div style={{ position: "relative", zIndex: 1 }}>
           <div
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              background: T.gold,
-              color: "#fff",
-              fontSize: 10,
-              fontWeight: 700,
-              padding: "3px 12px",
-              borderRadius: 100,
-              letterSpacing: ".06em",
-              textTransform: "uppercase",
-              marginBottom: 10,
+              display: "inline-flex", alignItems: "center", gap: 6,
+              background: T.gold, color: "#fff", fontSize: 10, fontWeight: 700,
+              padding: "3px 12px", borderRadius: 100, letterSpacing: ".06em",
+              textTransform: "uppercase", marginBottom: 10,
             }}
           >
-            👑 Gold Member
+            {tierLabel}
           </div>
-          <div
-            style={{
-              fontFamily: "var(--font-playfair, serif)",
-              fontSize: 24,
-              fontWeight: 700,
-              color: "#fff",
-              marginBottom: 6,
-            }}
-          >
-            Budi Santoso
+          <div style={{ fontFamily: "var(--font-playfair, serif)", fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+            {loading ? <Skel w={180} h={24} /> : (data?.fullName ?? "—")}
           </div>
           <div style={{ fontSize: 14, color: "rgba(255,255,255,.6)" }}>
             Total Poin:{" "}
-            <strong
-              style={{
-                fontSize: 18,
-                color: T.gold,
-                fontFamily: "var(--font-playfair, serif)",
-              }}
-            >
-              4.820 pts
+            <strong style={{ fontSize: 18, color: T.gold, fontFamily: "var(--font-playfair, serif)" }}>
+              {loading ? "…" : `${points.toLocaleString("id-ID")} pts`}
             </strong>
           </div>
-          <div style={{ marginTop: 14 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: 11,
-                color: "rgba(255,255,255,.45)",
-                marginBottom: 6,
-              }}
-            >
-              <span>Gold → Platinum</span>
-              <span>4.820 / 10.000 pts</span>
+          {tierInfo.target > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,.45)", marginBottom: 6 }}>
+                <span>{tier} → {tierInfo.label}</span>
+                <span>{points.toLocaleString("id-ID")} / {tierInfo.target.toLocaleString("id-ID")} pts</span>
+              </div>
+              <div style={{ height: 6, background: "rgba(255,255,255,.12)", borderRadius: 100 }}>
+                <div style={{ height: "100%", width: `${(progress * 100).toFixed(1)}%`, background: T.gold, borderRadius: 100, transition: "width .6s" }} />
+              </div>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,.4)", marginTop: 8 }}>
+                Butuh <strong style={{ color: T.gold }}>{remaining.toLocaleString("id-ID")} poin</strong> lagi untuk naik ke {tierInfo.label}
+              </p>
             </div>
-            <div
-              style={{
-                height: 6,
-                background: "rgba(255,255,255,.12)",
-                borderRadius: 100,
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: "48.2%",
-                  background: T.gold,
-                  borderRadius: 100,
-                }}
-              />
-            </div>
-          </div>
-          <p
-            style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,.4)",
-              marginTop: 8,
-            }}
-          >
-            Butuh <strong style={{ color: T.gold }}>5.180 poin</strong> lagi
-            untuk naik ke Platinum
-          </p>
+          )}
+          {tier === "PLATINUM" && (
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,.5)", marginTop: 12 }}>💎 Tier tertinggi — selamat!</p>
+          )}
         </div>
         <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
           <div
             style={{
-              width: 90,
-              height: 90,
-              borderRadius: "50%",
+              width: 90, height: 90, borderRadius: "50%",
               border: "3px solid rgba(201,150,42,.35)",
               background: "rgba(255,255,255,.06)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
               margin: "0 auto 8px",
             }}
           >
-            <div style={{ fontSize: 20, fontWeight: 700, color: T.gold }}>
-              48%
-            </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)" }}>
-              Menuju Platinum
-            </div>
+            {tierInfo.target > 0 ? (
+              <>
+                <div style={{ fontSize: 20, fontWeight: 700, color: T.gold }}>{Math.round(progress * 100)}%</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)" }}>Menuju {tierInfo.label}</div>
+              </>
+            ) : (
+              <div style={{ fontSize: 28 }}>💎</div>
+            )}
           </div>
-          <div
-            style={{
-              fontSize: 10,
-              color: "rgba(255,255,255,.35)",
-              marginBottom: 8,
-            }}
-          >
-            Berlaku s.d. Des 2026
-          </div>
-          <Btn variant="gold" sm>
-            Tukar Poin →
-          </Btn>
+          {data?.tierExpiresAt && (
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,.35)", marginBottom: 8 }}>
+              Berlaku s.d. {fmtDate(data.tierExpiresAt)}
+            </div>
+          )}
+          <Btn variant="gold" sm>Tukar Poin →</Btn>
         </div>
       </div>
 
       {/* KPI Grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 14,
-          marginBottom: 22,
-        }}
-      >
-        {kpis.map((k) => (
-          <Card
-            key={k.label}
-            style={{
-              padding: "16px 18px",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 2,
-                background: k.accent,
-              }}
-            />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
+        {[
+          {
+            icon: "⭐", label: "Total Poin", accent: T.gold,
+            value: loading ? "—" : `${points.toLocaleString("id-ID")}`,
+            sub: loading ? "" : `≈ ${fmtRupiah(points * 10)} · dari ${data?._count.orders ?? 0} transaksi`,
+          },
+          {
+            icon: "🛍️", label: "Total Pesanan", accent: T.terra,
+            value: loading ? "—" : String(data?._count.orders ?? 0),
+            sub: loading ? "" : `${processingCount} sedang diproses`,
+          },
+          {
+            icon: "🎫", label: "Voucher Aktif", accent: T.blue,
+            value: loading ? "—" : String(data?.voucherClaims.length ?? 0),
+            sub: loading || !data?.voucherClaims.length ? "Tidak ada voucher aktif" :
+              `Exp: ${fmtDate(data.voucherClaims[0].voucher.validUntil)}`,
+          },
+          {
+            icon: "🛡️", label: "Klaim Garansi", accent: T.sage,
+            value: loading ? "—" : String(data?._count.warrantyClaims ?? 0),
+            sub: "Total klaim diajukan",
+          },
+        ].map((k) => (
+          <Card key={k.label} style={{ padding: "16px 18px", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: k.accent }} />
             <div style={{ fontSize: 22, marginBottom: 8 }}>{k.icon}</div>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: T.muted,
-                textTransform: "uppercase",
-                letterSpacing: ".04em",
-                marginBottom: 4,
-              }}
-            >
+            <div style={{ fontSize: 11, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 4 }}>
               {k.label}
             </div>
-            <div
-              style={{
-                fontSize: 24,
-                fontWeight: 700,
-                color: T.brown,
-                marginBottom: 5,
-              }}
-            >
-              {k.value}
-            </div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: T.brown, marginBottom: 5 }}>{k.value}</div>
             <div style={{ fontSize: 11, color: T.muted }}>{k.sub}</div>
           </Card>
         ))}
@@ -378,36 +323,19 @@ export function Dashboard() {
 
       {/* Quick Actions */}
       <div style={{ display: "flex", gap: 12, marginBottom: 22 }}>
-        {[
-          ["🛍️", "Belanja"],
-          ["📦", "Pesanan"],
-          ["🛡️", "Garansi"],
-          ["💬", "Bantuan"],
-          ["🎫", "Voucher"],
-        ].map(([icon, label]) => (
+        {[["🛍️","Belanja"],["📦","Pesanan"],["🛡️","Garansi"],["💬","Bantuan"],["🎫","Voucher"]].map(([icon, label]) => (
           <div
             key={label}
             style={{
-              flex: 1,
-              background: T.card,
-              border: `1px solid ${T.border}`,
-              borderRadius: 12,
-              padding: "14px 10px",
-              textAlign: "center",
-              cursor: "pointer",
-              transition: "all .2s",
+              flex: 1, background: T.card, border: `1px solid ${T.border}`,
+              borderRadius: 12, padding: "14px 10px", textAlign: "center",
+              cursor: "pointer", transition: "all .2s",
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = T.gold;
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = T.border;
-            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = T.gold; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = T.border; }}
           >
             <div style={{ fontSize: 24, marginBottom: 6 }}>{icon}</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: T.brown }}>
-              {label}
-            </div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: T.brown }}>{label}</div>
           </div>
         ))}
       </div>
@@ -418,306 +346,166 @@ export function Dashboard() {
         <Card style={{ overflow: "hidden" }}>
           <div
             style={{
-              padding: "16px 20px",
-              borderBottom: `1px solid ${T.border}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              padding: "16px 20px", borderBottom: `1px solid ${T.border}`,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
             }}
           >
             <div>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: ".08em",
-                  textTransform: "uppercase",
-                  color: T.gold,
-                  marginBottom: 2,
-                }}
-              >
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: T.gold, marginBottom: 2 }}>
                 Riwayat
               </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-playfair, serif)",
-                  fontSize: 17,
-                  fontWeight: 700,
-                  color: T.brown,
-                }}
-              >
+              <div style={{ fontFamily: "var(--font-playfair, serif)", fontSize: 17, fontWeight: 700, color: T.brown }}>
                 Pembelian Terbaru
               </div>
             </div>
-            <Btn variant="outline" sm>
-              Lihat Semua
-            </Btn>
+            <Btn variant="outline" sm>Lihat Semua</Btn>
           </div>
-          <table
-            className="data-table"
-            style={{ "--border-color": T.border } as React.CSSProperties}
-          >
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-                {["Produk", "Total", "Poin", "Status"].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      letterSpacing: ".06em",
-                      textTransform: "uppercase",
-                      color: T.muted,
-                      padding: "10px 16px",
-                      textAlign: "left",
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((o) => (
-                <tr
-                  key={o.name}
-                  style={{ borderBottom: `1px solid ${T.border}` }}
-                >
-                  <td style={{ padding: "12px 16px" }}>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 10 }}
-                    >
-                      <div
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 8,
-                          background: T.bg,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 16,
-                          flexShrink: 0,
-                          border: `1px solid ${T.border}`,
-                        }}
-                      >
-                        {o.icon}
-                      </div>
-                      <div>
-                        <div
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: T.brown,
-                          }}
-                        >
-                          {o.name}
-                        </div>
-                        <div style={{ fontSize: 10, color: T.muted }}>
-                          {o.brand}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 16px",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: T.brown,
-                    }}
-                  >
-                    {o.price}
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 16px",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: T.sage,
-                    }}
-                  >
-                    {o.pts}
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    <Badge color={o.status}>{o.statusLabel}</Badge>
-                  </td>
-                </tr>
+
+          {loading ? (
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: T.border, flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                    <Skel w="70%" />
+                    <Skel w="45%" h={9} />
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          ) : !data?.orders.length ? (
+            <div style={{ padding: 28, textAlign: "center", color: T.muted, fontSize: 12 }}>Belum ada pesanan</div>
+          ) : (
+            <table className="data-table" style={{ "--border-color": T.border } as React.CSSProperties}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+                  {["Produk", "Total", "Status"].map((h) => (
+                    <th key={h} style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", textAlign: "left" }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.orders.map((o) => {
+                  const product = o.items[0]?.product;
+                  const img = product?.images[0]?.url;
+                  const badge = orderBadge(o.status);
+                  return (
+                    <tr key={o.id} style={{ borderBottom: `1px solid ${T.border}` }}>
+                      <td style={{ padding: "12px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div
+                            style={{
+                              width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                              background: T.bg, border: `1px solid ${T.border}`,
+                              overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >
+                            {img
+                              ? <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              : <span style={{ fontSize: 16 }}>📦</span>}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: T.brown }}>
+                              {product?.name ?? "—"}
+                            </div>
+                            <div style={{ fontSize: 10, color: T.muted }}>
+                              {o.mitra.showroomName} · #{o.orderNumber}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: T.brown, whiteSpace: "nowrap" }}>
+                        {fmtRupiah(o.totalAmount)}
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <Badge color={badge.color}>{badge.label}</Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </Card>
 
         {/* Right column */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Points Activity */}
           <Card style={{ padding: 18 }}>
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: ".08em",
-                textTransform: "uppercase",
-                color: T.gold,
-                marginBottom: 3,
-              }}
-            >
-              Poin
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-playfair, serif)",
-                fontSize: 16,
-                fontWeight: 700,
-                color: T.brown,
-                marginBottom: 14,
-              }}
-            >
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: T.gold, marginBottom: 3 }}>Poin</div>
+            <div style={{ fontFamily: "var(--font-playfair, serif)", fontSize: 16, fontWeight: 700, color: T.brown, marginBottom: 14 }}>
               Aktivitas Poin
             </div>
-            {points.map((p) => (
-              <div
-                key={p.title}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "10px 0",
-                  borderBottom: `1px solid ${T.border}`,
-                }}
-              >
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 9,
-                    background:
-                      p.type === "redeem"
-                        ? "rgba(196,87,42,.1)"
-                        : p.type === "bonus"
-                          ? "rgba(74,144,217,.1)"
-                          : T.goldP,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 16,
-                    flexShrink: 0,
-                  }}
-                >
-                  {p.icon}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{ fontSize: 12, fontWeight: 500, color: T.brown }}
-                  >
-                    {p.title}
-                  </div>
-                  <div style={{ fontSize: 10, color: T.muted }}>{p.date}</div>
-                </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: p.val.startsWith("−") ? T.terra : T.sage,
-                  }}
-                >
-                  {p.val}
-                </div>
+            {loading ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {Array.from({ length: 3 }).map((_, i) => <Skel key={i} h={10} />)}
               </div>
-            ))}
+            ) : !data?.pointTransactions.length ? (
+              <div style={{ fontSize: 12, color: T.muted }}>Belum ada aktivitas poin</div>
+            ) : (
+              data.pointTransactions.map((p) => {
+                const { ico, bg, color } = pointIcon(p.type);
+                const isNeg = p.type === "REDEEM" || p.type === "EXPIRE";
+                return (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                      {ico}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: T.brown, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {p.description}
+                      </div>
+                      <div style={{ fontSize: 10, color: T.muted }}>{fmtDate(p.createdAt)}</div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isNeg ? T.terra : color, flexShrink: 0 }}>
+                      {isNeg ? "−" : "+"}{p.amount.toLocaleString("id-ID")}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </Card>
 
           {/* Vouchers */}
           <Card style={{ padding: 18 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 14,
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: ".08em",
-                    textTransform: "uppercase",
-                    color: T.gold,
-                    marginBottom: 2,
-                  }}
-                >
-                  Voucher
-                </div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-playfair, serif)",
-                    fontSize: 16,
-                    fontWeight: 700,
-                    color: T.brown,
-                  }}
-                >
-                  Voucher Aktif
-                </div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: T.gold, marginBottom: 2 }}>Voucher</div>
+                <div style={{ fontFamily: "var(--font-playfair, serif)", fontSize: 16, fontWeight: 700, color: T.brown }}>Voucher Aktif</div>
               </div>
-              <Btn variant="outline" sm>
-                + Tukar
-              </Btn>
+              <Btn variant="outline" sm>+ Tukar</Btn>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {vouchers.map((v) => (
-                <div
-                  key={v.name}
-                  style={{
-                    display: "flex",
-                    borderRadius: 10,
-                    overflow: "hidden",
-                    border: `1px solid ${T.border}`,
-                  }}
-                >
-                  <div
-                    style={{
-                      background: T.brown,
-                      padding: "12px 10px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minWidth: 52,
-                      fontSize: 20,
-                    }}
-                  >
-                    {v.icon}
-                  </div>
-                  <div style={{ padding: "10px 14px", flex: 1 }}>
-                    <div
-                      style={{ fontSize: 12, fontWeight: 600, color: T.brown }}
-                    >
-                      {v.name}
+
+            {loading ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {Array.from({ length: 2 }).map((_, i) => <Skel key={i} h={52} />)}
+              </div>
+            ) : !data?.voucherClaims.length ? (
+              <div style={{ fontSize: 12, color: T.muted }}>Tidak ada voucher aktif</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {data.voucherClaims.map(({ voucher: v }) => {
+                  const { icon, val } = voucherDisplay(v.type, v.value);
+                  return (
+                    <div key={v.id} style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: `1px solid ${T.border}` }}>
+                      <div style={{ background: T.brown, padding: "12px 10px", display: "flex", alignItems: "center", justifyContent: "center", minWidth: 52, fontSize: 20 }}>
+                        {icon}
+                      </div>
+                      <div style={{ padding: "10px 14px", flex: 1 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: T.brown }}>{v.name}</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: T.gold }}>{val}</div>
+                        <div style={{ fontSize: 10, color: T.muted }}>Exp: {fmtDate(v.validUntil)}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", paddingRight: 12 }}>
+                        <Btn variant="outline" sm>Pakai →</Btn>
+                      </div>
                     </div>
-                    <div
-                      style={{ fontSize: 16, fontWeight: 700, color: T.gold }}
-                    >
-                      {v.val}
-                    </div>
-                    <div style={{ fontSize: 10, color: T.muted }}>
-                      Exp: {v.exp}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      paddingRight: 12,
-                    }}
-                  >
-                    <Btn variant="outline" sm>
-                      Pakai →
-                    </Btn>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </Card>
         </div>
       </div>
