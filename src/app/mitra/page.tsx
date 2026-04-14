@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Announcements } from "./announcement/page";
 import { KatalogMitra } from "./katalog/page";
 import { Community } from "./community/page";
+
+type MitraDev = { id: string; showroomName: string; mitraCode: string };
 
 const T = {
   bg: "#F7F3EE",
@@ -27,6 +29,20 @@ type Section = "announce" | "katalog" | "community";
 export default function MitraPortal() {
   const [active, setActive] = useState<Section>("announce");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mitras, setMitras] = useState<MitraDev[]>([]);
+  const [mitraId, setMitraId] = useState("");
+
+  useEffect(() => {
+    fetch("/api/dev/mitras")
+      .then((r) => r.json())
+      .then(({ data }) => {
+        if (data?.length) {
+          setMitras(data);
+          setMitraId(data[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const navItems: {
     id: Section;
@@ -134,7 +150,7 @@ export default function MitraPortal() {
                 lineHeight: 1.2,
               }}
             >
-              Homera Studio
+              {mitras.find((m) => m.id === mitraId)?.showroomName ?? "Mitra Portal"}
             </div>
             <div
               style={{
@@ -143,7 +159,7 @@ export default function MitraPortal() {
                 fontFamily: "monospace",
               }}
             >
-              MTR-0001
+              {mitras.find((m) => m.id === mitraId)?.mitraCode ?? "–"}
             </div>
             <div
               style={{
@@ -310,6 +326,18 @@ export default function MitraPortal() {
             gap: 9,
           }}
         >
+          {mitras.length > 0 && (
+            <select
+              value={mitraId}
+              onChange={(e) => setMitraId(e.target.value)}
+              style={{ fontSize: 11, padding: "5px 10px", border: `1.5px solid ${T.border}`,
+                borderRadius: 7, background: T.warm, color: T.brown, cursor: "pointer" }}
+            >
+              {mitras.map((m) => (
+                <option key={m.id} value={m.id}>{m.showroomName}</option>
+              ))}
+            </select>
+          )}
           <div
             className="search-bar"
             style={{ background: T.bg, border: `1.5px solid ${T.border}` }}
@@ -332,9 +360,9 @@ export default function MitraPortal() {
       </header>
 
       <main className="portal-main" style={{ padding: "26px 30px" }}>
-        {active === "announce" && <Announcements />}
-        {active === "katalog" && <KatalogMitra />}
-        {active === "community" && <Community />}
+        {active === "announce" && <Announcements mitraId={mitraId} />}
+        {active === "katalog" && <KatalogMitra mitraId={mitraId} />}
+        {active === "community" && <Community mitraId={mitraId} />}
       </main>
     </div>
   );

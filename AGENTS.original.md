@@ -1,7 +1,7 @@
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
-Breaking changes — APIs, conventions, file structure may differ from training data. Read relevant guide in `node_modules/next/dist/docs/` before writing code. Heed deprecation notices.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
 ---
@@ -10,27 +10,27 @@ Breaking changes — APIs, conventions, file structure may differ from training 
 
 ## What is DexHome?
 
-DexHome = **premium Indonesian furniture marketplace**. Connects customers with mitra (showroom partners) across Indonesia. Multi-sided platform: customers browse/buy, mitra sell via physical showrooms, central team manages platform.
+DexHome is a **premium Indonesian furniture marketplace** platform. It connects customers with mitra (showroom partners) across Indonesia. Think of it as a multi-sided platform: customers browse and buy furniture, mitra sell through their physical showrooms, and the central team manages the platform.
 
 ## The 4 Roles (Critical — Read This First)
 
-Every user has exactly one role. Routes/features strictly role-separated.
+Every user in this system has exactly one role. Routes and features are strictly role-separated.
 
 | Role | Route Prefix | Who They Are |
 |---|---|---|
-| `CUSTOMER` | `/customer` | End consumers browsing/buying furniture |
-| `MITRA_USER` | `/mitra` | Showroom staff — view catalog and community |
+| `CUSTOMER` | `/customer` | End consumers browsing and buying furniture |
+| `MITRA_USER` | `/mitra` | Showroom staff — can view catalog and community |
 | `MITRA_ADMIN` | `/mitra/admin` | Showroom owner/manager — full control of their showroom |
 | `CENTER_ADMIN` | `/admin` | DexHome platform team — controls everything |
 
-**`MITRA_ADMIN` manages one showroom and its `MITRA_USER` staff. `CENTER_ADMIN` has no showroom — manages entire platform.**
+**A `MITRA_ADMIN` manages one showroom and its `MITRA_USER` staff. A `CENTER_ADMIN` has no showroom — they manage the entire platform.**
 
 ## Core Features (Client Requirements)
 
 1. **Dashboard** (Customer) — membership points, tier status (Silver/Gold/Platinum), purchase history, active vouchers, insurance coverage
-2. **Katalog** (Customer) — product catalog with nearest-mitra availability. Customer views product → sees which nearby showrooms stock it (browser Geolocation + Haversine distance)
-3. **Showroom Finder** (Customer) — interactive map of active mitra showrooms; search by city; click for details/directions
-4. **Customer Service** (Customer) — submit complaints/warranty claims; chat thread with DexHome agents; file/image attachments
+2. **Katalog** (Customer) — product catalog with nearest-mitra availability. When a customer views a product, they see which showrooms near them stock it (uses browser Geolocation + Haversine distance)
+3. **Showroom Finder** (Customer) — interactive map showing all active mitra showrooms; search by city; click for showroom details and directions
+4. **Customer Service** (Customer) — submit complaints and warranty claims; chat thread with DexHome agents; file/image attachments
 
 ## Tech Stack
 
@@ -73,46 +73,46 @@ src/
 
 ## Database Schema
 
-Full schema in `SCHEMA.md` (~40 tables). Current `prisma/schema.prisma` has only placeholder `User` model — **must fully implement before any API work**.
+The full intended schema is in `SCHEMA.md` (~40 tables). The current `prisma/schema.prisma` only has a placeholder `User` model — **it needs to be fully implemented before any API work can happen**.
 
 Key entities: `User`, `CustomerProfile`, `MitraProfile`, `Product`, `Order`, `PointTransaction`, `Voucher`, `WarrantyClaim`, `CSTicket`, `Announcement`, `CommunityPost`
 
 ## Design System
 
-**Color themes portal-specific — do not mix:**
+**Color themes are portal-specific — do not mix them:**
 - Customer & Mitra User: light warm (cream `#F5F0E8`, brown `#2C1810`, gold `#C9962A`)
 - Mitra Admin: dark purple (`#13111A` bg, `#8B7CC8` accent)
 - Center Admin: dark gold/black (`#0F0F12` bg, `#C9962A` accent)
 
 **Fonts:** Playfair Display (headings) + DM Sans (body). CSS vars: `--font-playfair`, `--font-dm-sans`.
 
-**Shared CSS classes** in `src/app/globals.css`: `.portal-shell`, `.portal-sidebar`, `.portal-topbar`, `.portal-main`, `.kpi-card`, `.data-table`, `.filter-tabs`, `.fade-up`, etc.
+**Shared CSS classes** are in `src/app/globals.css`: `.portal-shell`, `.portal-sidebar`, `.portal-topbar`, `.portal-main`, `.kpi-card`, `.data-table`, `.filter-tabs`, `.fade-up`, etc.
 
 ## API Conventions
 
-- All API responses use shape `{ data, error, meta? }` — use helpers from `src/lib/api-response.ts`
+- All API responses use the shape `{ data, error, meta? }` — use helpers from `src/lib/api-response.ts`
 - Use `zod` for request body validation in POST/PATCH routes
-- Auth via NextAuth.js v5 — session carries `{ id, email, role, profileId }`
+- Authentication will use NextAuth.js v5 — session carries `{ id, email, role, profileId }`
 - Route protection via `src/middleware.ts` (not yet created)
 
 ## What's NOT Built Yet (as of 2026-03-23)
 
-- Auth (no login pages, no session)
+- Authentication (no login pages, no session)
 - Real database (Prisma schema incomplete)
 - API routes beyond basic `/api/users` CRUD
-- Component extraction (page files monolithic, need splitting)
-- Map integration (showroom finder UI-only)
+- Component extraction (page files are monolithic, need to be split)
+- Map integration (showroom finder is UI-only)
 - CS ticket system
 - Point input flow (mitra admin)
 - Any real-time features
 
 ## Open Questions (Do Not Assume — Ask or Check TODO.md)
 
-- Ordering in-app, or app just connects customers to visit showroom?
-- Map provider: Google Maps (paid) or OpenStreetMap (free)?
-- Auth strategy: NextAuth.js, Supabase Auth, or custom JWT?
-- Products platform-wide or per-mitra?
+- Does ordering happen in-app, or does the app just connect customers to visit the showroom?
+- Which map provider: Google Maps (paid) or OpenStreetMap (free)?
+- Which auth strategy: NextAuth.js, Supabase Auth, or custom JWT?
+- Are products platform-wide or per-mitra?
 
 ## Breaking Changes in This Next.js Version
 
-Before writing any Next.js-specific code (routing, data fetching, middleware, caching, etc.), read relevant guide in `node_modules/next/dist/docs/`. Do not rely on training data for Next.js APIs — may have changed.
+Before writing any Next.js-specific code (routing, data fetching, middleware, caching, etc.), read the relevant guide in `node_modules/next/dist/docs/`. Do not rely on training data for Next.js APIs — they may have changed.

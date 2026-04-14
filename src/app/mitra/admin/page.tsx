@@ -1,9 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dashboard } from "./dashboard/page";
 import { StockManagement } from "./stockManagement/page";
 import { InputPoints } from "./inputPoints/page";
 import { AnnouncementsAdmin } from "./readAnnouncements/page";
+
+type MitraDev = { id: string; showroomName: string; mitraCode: string };
 
 const T = {
   bg: "#13111A",
@@ -31,6 +33,20 @@ type Section = "dashboard" | "stock" | "inputpts" | "announce";
 export default function MitraAdminPortal() {
   const [active, setActive] = useState<Section>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mitras, setMitras] = useState<MitraDev[]>([]);
+  const [mitraId, setMitraId] = useState("");
+
+  useEffect(() => {
+    fetch("/api/dev/mitras")
+      .then((r) => r.json())
+      .then(({ data }) => {
+        if (data?.length) {
+          setMitras(data);
+          setMitraId(data[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const navItems: {
     id: Section;
@@ -131,12 +147,12 @@ export default function MitraAdminPortal() {
           </div>
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: T.txt }}>
-              Homera Studio
+              {mitras.find((m) => m.id === mitraId)?.showroomName ?? "Mitra Admin"}
             </div>
             <div
               style={{ fontSize: 10, color: T.muted, fontFamily: "monospace" }}
             >
-              MTR-0001
+              {mitras.find((m) => m.id === mitraId)?.mitraCode ?? "–"}
             </div>
             <div
               style={{
@@ -274,7 +290,7 @@ export default function MitraAdminPortal() {
             {titles[active]}
           </div>
           <div style={{ fontSize: 11, color: T.muted }}>
-            Homera Studio · Admin Panel
+            {mitras.find((m) => m.id === mitraId)?.showroomName ?? "–"} · Admin Panel
           </div>
         </div>
         <div
@@ -285,6 +301,18 @@ export default function MitraAdminPortal() {
             gap: 9,
           }}
         >
+          {mitras.length > 0 && (
+            <select
+              value={mitraId}
+              onChange={(e) => setMitraId(e.target.value)}
+              style={{ fontSize: 11, padding: "5px 10px", border: `1px solid ${T.border2}`,
+                borderRadius: 7, background: T.surf2, color: T.txt, cursor: "pointer", outline: "none" }}
+            >
+              {mitras.map((m) => (
+                <option key={m.id} value={m.id}>{m.showroomName}</option>
+              ))}
+            </select>
+          )}
           <div
             className="search-bar"
             style={{ background: T.surf2, border: `1px solid ${T.border2}` }}
@@ -311,10 +339,10 @@ export default function MitraAdminPortal() {
       </header>
 
       <main className="portal-main" style={{ padding: "24px 28px" }}>
-        {active === "dashboard" && <Dashboard />}
-        {active === "stock" && <StockManagement />}
-        {active === "inputpts" && <InputPoints />}
-        {active === "announce" && <AnnouncementsAdmin />}
+        {active === "dashboard" && <Dashboard mitraId={mitraId} />}
+        {active === "stock" && <StockManagement mitraId={mitraId} />}
+        {active === "inputpts" && <InputPoints mitraId={mitraId} />}
+        {active === "announce" && <AnnouncementsAdmin mitraId={mitraId} />}
       </main>
     </div>
   );
