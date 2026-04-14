@@ -1,12 +1,27 @@
 "use client";
 
-//---CONFIG-----
+//==========TYPES==========
+type OrderStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "CLAIM";
+type BadgeColor = "green" | "gold" | "red" | "grey" | "blue";
+//-------------------------
+
 const TIER_NEXT: Record<string, { nextTier: string; target: number }> = {
   BRONZE: { nextTier: "SILVER", target: 3000 },
   SILVER: { nextTier: "GOLD", target: 5000 },
   GOLD: { nextTier: "PLATINUM", target: 10000 },
   PLATINUM: { nextTier: "", target: 0 },
 };
+
+function orderBadge(s: OrderStatus): {color: BadgeColor; label: string;) { 
+
+}
 
 export default function CustomerPortal() {
   return <h1>Hello World!</h1>;
