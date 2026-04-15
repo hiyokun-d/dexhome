@@ -25,3 +25,12 @@ export function pointIcon(type: string) {
   if (type === "REFUND") return { ico: "↩", bg: `rgba(122,140,110,.1)` };
   return { ico: "⭐", bg: `rgba(201,150,42,.10)` };
 }
+
+export function voucherDisplay(type: string, value: number) {
+  if (type === "FIXED_DISCOUNT")
+    return { icon: "🎫", val: `Rp ${value.toLocaleString("id-ID")}` };
+  if (type === "PERCENT_DISCOUNT") return { icon: "🏷️", val: `${value}%` };
+  if (type === "FREE_SHIPPING") return { icon: "🚚", val: "Gratis Ongkir" };
+  if (type === "CASHBACK") return { icon: "💎", val: `Cashback ${value}%` };
+  return { icon: "🎫", val: String(value) };
+}
