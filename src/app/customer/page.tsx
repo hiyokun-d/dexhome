@@ -89,5 +89,5 @@ export default function Dashboard() {
    totalPoints: 50001050
    voucherClaims: [] (0)
  */
-  return <h1>We'll be right back into this</h1>;
+  return <></>;
 }
