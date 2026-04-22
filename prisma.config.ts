@@ -8,6 +8,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DIRECT_URL"), // direct connection required for migrations (no pgbouncer)
+    url: env("DATABASE_URL"), // direct connection required for migrations (no pgbouncer)
   },
 });
