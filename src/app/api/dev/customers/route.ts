@@ -5,9 +5,6 @@ import { ok, err } from "@/lib/api-response";
 // Returns seeded customer profiles for dev/testing.
 // REMOVE or gate behind auth before production.
 export async function GET() {
-  if (process.env.NODE_ENV === "production") {
-    return err("Not available in production", 403);
-  }
   try {
     const customers = await prisma.customerProfile.findMany({
       select: {

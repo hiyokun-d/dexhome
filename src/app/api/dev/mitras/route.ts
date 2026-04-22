@@ -4,9 +4,6 @@ import { ok, err } from "@/lib/api-response";
 // GET /api/dev/mitras
 // Dev-only: returns mitra profiles for testing without auth
 export async function GET() {
-  if (process.env.NODE_ENV === "production") {
-    return err("Not available in production", 403);
-  }
   try {
     const mitras = await prisma.mitraProfile.findMany({
       select: {

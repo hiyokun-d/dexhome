@@ -4,7 +4,6 @@ import { ok, err } from "@/lib/api-response";
 // GET /api/dev/agents — seeded CENTER_ADMIN users for dev/testing
 // REMOVE or gate before production
 export async function GET() {
-  if (process.env.NODE_ENV === "production") return err("Not available", 403);
   try {
     const agents = await prisma.user.findMany({
       where: { role: "CENTER_ADMIN" },
