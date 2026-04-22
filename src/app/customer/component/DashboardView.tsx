@@ -1,6 +1,7 @@
 "use client";
-
+import styles from "@/styles/loading.module.css";
 import type { DashboardData } from "../types/dashboardData.types";
+import { fmt, fmtDate, fmtRp, daysLeft } from "../function/formatter";
 
 const TIER_NEXT: Record<string, { nextTier: string; target: number }> = {
   BRONZE: { nextTier: "SILVER", target: 3_000 },
@@ -36,34 +37,14 @@ const TIER_CFG = {
   },
 };
 
-const STATUS_CFG: Record<string, { label: string; bg: string; color: string }> = {
-  PENDING: { label: "Menunggu", bg: "#FEF3C7", color: "#92400E" },
-  PROCESSING: { label: "Diproses", bg: "#DBEAFE", color: "#1E40AF" },
-  SHIPPED: { label: "Dikirim", bg: "#FED7AA", color: "#9A3412" },
-  DELIVERED: { label: "Selesai", bg: "#D1FAE5", color: "#065F46" },
-  CANCELLED: { label: "Dibatal", bg: "#FEE2E2", color: "#991B1B" },
-};
-
-function fmt(n: number) {
-  return new Intl.NumberFormat("id-ID").format(n);
-}
-function fmtRp(n: number) {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-function fmtDate(s: string) {
-  return new Date(s).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-function daysLeft(s: string) {
-  return Math.ceil((new Date(s).getTime() - Date.now()) / 86_400_000);
-}
+const STATUS_CFG: Record<string, { label: string; bg: string; color: string }> =
+  {
+    PENDING: { label: "Menunggu", bg: "#FEF3C7", color: "#92400E" },
+    PROCESSING: { label: "Diproses", bg: "#DBEAFE", color: "#1E40AF" },
+    SHIPPED: { label: "Dikirim", bg: "#FED7AA", color: "#9A3412" },
+    DELIVERED: { label: "Selesai", bg: "#D1FAE5", color: "#065F46" },
+    CANCELLED: { label: "Dibatal", bg: "#FEE2E2", color: "#991B1B" },
+  };
 
 interface Props {
   data: DashboardData | null;
@@ -75,8 +56,10 @@ export function DashboardView({ data, loading }: Props) {
   const tierCfg = TIER_CFG[tier];
   const tierNext = TIER_NEXT[tier];
   const points = data?.totalPoints ?? 0;
-  const progress = tierNext.target > 0 ? Math.min(1, points / tierNext.target) : 1;
-  const remaining = tierNext.target > 0 ? Math.max(0, tierNext.target - points) : 0;
+  const progress =
+    tierNext.target > 0 ? Math.min(1, points / tierNext.target) : 1;
+  const remaining =
+    tierNext.target > 0 ? Math.max(0, tierNext.target - points) : 0;
 
   const today = new Date().toLocaleDateString("id-ID", {
     weekday: "long",
@@ -101,7 +84,7 @@ export function DashboardView({ data, loading }: Props) {
           fontSize: 14,
         }}
       >
-        Memuat dashboard...
+        <div className={styles.loader} />{" "}
       </div>
     );
   }
@@ -477,7 +460,11 @@ export function DashboardView({ data, loading }: Props) {
                   <tr key={order.id} style={{ borderBottomColor: "#F5F0E8" }}>
                     <td>
                       <div
-                        style={{ fontWeight: 600, color: "#2C1810", fontSize: 13 }}
+                        style={{
+                          fontWeight: 600,
+                          color: "#2C1810",
+                          fontSize: 13,
+                        }}
                       >
                         {firstItem}
                       </div>
@@ -517,9 +504,7 @@ export function DashboardView({ data, loading }: Props) {
       )}
 
       {/* ── Bottom row: vouchers + point history ── */}
-      <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         {/* Vouchers */}
         <div
           style={{
