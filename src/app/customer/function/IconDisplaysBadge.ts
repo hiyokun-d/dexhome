@@ -1,5 +1,5 @@
 import { OrderStatus } from "@/types";
-import { BadgeColor } from "./types/CustomersCollection.types";
+import { BadgeColor } from "../types/CustomersCollection.types";
 
 export function orderBadge(status: OrderStatus): {
   color: BadgeColor;
