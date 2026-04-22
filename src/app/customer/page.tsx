@@ -89,5 +89,24 @@ export default function Dashboard() {
    totalPoints: 50001050
    voucherClaims: [] (0)
  */
-  return <></>;
+
+  return (
+    <>
+      {/* dashboard! */}
+      <section className="bg-amber-50 w-screen h-screen">
+        {/* left-side of this section */}
+        <section>
+          <h1>Hi {data?.fullName}</h1>
+          <div>
+            <div>
+              <p>Your tier: {data?.membershipTier}</p>
+              {/* progress bar */}
+              <div className="bg-amber-950 w-5xl h-3"></div>
+            </div>
+            <h2>Point {data?.totalPoints}</h2>
+          </div>
+        </section>
+      </section>
+    </>
+  );
 }
