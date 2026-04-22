@@ -1,9 +1,36 @@
 # DexHome — Developer TODO
 
-> **Last updated:** 2026-04-14
+> **Last updated:** 2026-04-23
 >
 > Living document. Work top-to-bottom — each phase unblocks the next.
 > Items marked `[?]` need client clarification before building.
+
+---
+
+## ⚠️ Pre-Launch Checklist (MUST do before real users)
+
+> Demo shortcuts that are intentionally insecure. Fix every item before launch.
+
+### Security — Critical
+- [ ] **Delete or gate `/api/dev/*` routes** — currently open to everyone in production; exposes raw user/mitra/agent data. Remove the files or add a secret header check.
+- [ ] **Implement auth** — `src/lib/auth.ts` (NextAuth v5) + login page at `/login`. No auth = anyone can call any API.
+- [ ] **Add `src/middleware.ts`** — route protection by role. Without it, any user can visit any portal.
+- [ ] **Hash check on login** — ensure `bcrypt.compare()` used, not plain string match.
+- [ ] **Rate limit auth endpoints** — brute-force protection on `POST /api/auth`.
+- [ ] **CSRF protection** — verify NextAuth v5 defaults cover this, add if not.
+- [ ] **Input sanitization** — all user-submitted text fields (CS messages, community posts, etc.).
+- [ ] **Remove `password123`** from seed script comments / any docs visible to client.
+
+### Infrastructure — Critical
+- [ ] **`DATABASE_URL` in Vercel env vars** — without this all API calls return 500.
+- [ ] **`NEXTAUTH_SECRET` in Vercel env vars** — required for NextAuth session signing.
+- [ ] **`NEXTAUTH_URL`** set to production domain in Vercel env vars.
+- [ ] **Supabase S3 keys in Vercel env vars** — `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (for file uploads).
+
+### Code Quality — Before Launch
+- [ ] **Replace all `<img>` with `next/image`** — katalog page uses raw `<img>`, missing optimization.
+- [ ] **Add `loading.tsx` + `error.tsx`** per route — bare crashes show stack traces to users.
+- [ ] **Pagination on all list endpoints** — orders, vouchers, tickets currently unbounded queries.
 
 ---
 
