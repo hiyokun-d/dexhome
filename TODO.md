@@ -5,6 +5,8 @@
 > Living document. Work top-to-bottom — each phase unblocks the next.
 > Items marked `[?]` need client clarification before building.
 
+- [ ] implement this API maps `https://leafletjs.com`
+
 ---
 
 ## ⚠️ Pre-Launch Checklist (MUST do before real users)
@@ -279,15 +281,15 @@
 
 ## Shared Library TODOs
 
-| File                      | Status     | Notes                                              |
-| ------------------------- | ---------- | -------------------------------------------------- |
-| `src/lib/prisma.ts`       | ✅ Done    | Singleton + pg adapter                             |
+| File                      | Status     | Notes                                                       |
+| ------------------------- | ---------- | ----------------------------------------------------------- |
+| `src/lib/prisma.ts`       | ✅ Done    | Singleton + pg adapter                                      |
 | `src/lib/api-response.ts` | ✅ Done    | `ok()`, `err()`, `paginated()` — now used by all API routes |
-| `src/lib/geo.ts`          | ✅ Done    | `haversineKm()` for showroom finder                |
-| `src/lib/auth.ts`         | ❌ Missing | NextAuth config, session callbacks                 |
-| `src/lib/buckets-s3.ts`   | ✅ Done    | `getS3()`, `getPublicUrl()`, Supabase S3 client    |
-| `src/middleware.ts`       | ❌ Missing | Route protection by role                           |
-| `src/types/index.ts`      | ✅ Done    | All shared TypeScript types                        |
+| `src/lib/geo.ts`          | ✅ Done    | `haversineKm()` for showroom finder                         |
+| `src/lib/auth.ts`         | ❌ Missing | NextAuth config, session callbacks                          |
+| `src/lib/buckets-s3.ts`   | ✅ Done    | `getS3()`, `getPublicUrl()`, Supabase S3 client             |
+| `src/middleware.ts`       | ❌ Missing | Route protection by role                                    |
+| `src/types/index.ts`      | ✅ Done    | All shared TypeScript types                                 |
 
 ---
 

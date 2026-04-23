@@ -1,45 +1,81 @@
 "use client";
-import { useState } from "react";
-import { Dashboard } from "./Main-menu/dashboard/page";
-import { Katalog } from "./Main-menu/katalog/page";
-import { Showroom } from "./Main-menu/showroom/page";
-import { CustomerService } from "./Main-menu/customerService/page";
-import { Sidebar } from "./component/Sidebar";
-import { Topbar } from "./component/Topbar";
 
-const T = {
-  bg: "#F5F0E8",
-};
+import { useEffect, useState } from "react";
+import { Navbar } from "./component/Navbar";
+import { DashboardView } from "./component/DashboardView";
+import type { DashboardData } from "./types/dashboardData.types";
 
 type Section = "dashboard" | "katalog" | "showroom" | "cs";
 
 export default function CustomerPortal() {
-  const [active, setActive] = useState<Section>("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [section, setSection] = useState<Section>("dashboard");
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  //! TEMP: pick first seeded customer
+  useEffect(() => {
+    fetch("/api/dev/customers")
+      .then((r) => r.json())
+      .then(({ data: list }) => {
+        if (list?.length) setCustomerId(list[0].id);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!customerId) return;
+    setLoading(true);
+    fetch(`/api/customer/dashboard?customerId=${customerId}`)
+      .then((r) => r.json())
+      .then(({ data: d }) => {
+        if (d) setData(d);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [customerId]);
 
   return (
-    <div className="portal-shell" style={{ background: T.bg }}>
-      {/* Sidebar Overlay */}
-      <div
-        className={`sidebar-overlay${sidebarOpen ? " open" : ""}`}
-        onClick={() => setSidebarOpen(false)}
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#F5F0E8",
+        fontFamily: "var(--font-dm-sans, sans-serif)",
+      }}
+    >
+      <Navbar
+        active={section}
+        setActive={setSection}
+        userName={data?.fullName}
+        tier={data?.membershipTier}
       />
-
-      <Sidebar
-        active={active}
-        sidebarOpen={sidebarOpen}
-        setActive={setActive}
-        setSidebarOpen={setSidebarOpen}
-      />
-      <Topbar active={active} setSidebarOpen={setSidebarOpen} />
-
-      {/* Main */}
-      <main className="portal-main" style={{ padding: "28px 32px" }}>
-        {active === "dashboard" && <Dashboard />}
-        {active === "katalog" && <Katalog />}
-        {active === "showroom" && <Showroom />}
-        {active === "cs" && <CustomerService />}
+      <main
+        style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}
+      >
+        {section === "dashboard" && (
+          <DashboardView data={data} loading={loading} />
+        )}
+        {section === "katalog" && <Placeholder label="Katalog" />}
+        {section === "showroom" && <Placeholder label="Showroom" />}
+        {section === "cs" && <Placeholder label="Customer Service" />}
       </main>
+    </div>
+  );
+}
+
+function Placeholder({ label }: { label: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: 320,
+        color: "#8A7F74",
+        fontSize: 14,
+      }}
+    >
+      {label} — belum tersedia
     </div>
   );
 }
